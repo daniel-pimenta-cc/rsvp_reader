@@ -1,0 +1,54 @@
+abstract final class AppConstants {
+  static const int defaultWpm = 300;
+  static const int minWpm = 50;
+  static const int maxWpm = 1000;
+  static const int wpmStep = 25;
+  static const int skipWordCount = 10;
+
+  /// Ramp-up: number of words to reach target WPM after pressing play.
+  static const int rampUpWords = 30;
+
+  /// Ramp-up: starting speed as fraction of target WPM (0.5 = 50%).
+  static const double rampUpStartFraction = 0.7;
+
+  static const double defaultFontSize = 48.0;
+  static const double defaultContextFontSize = 18.0;
+  static const double minFontSize = 20.0;
+  static const double maxFontSize = 80.0;
+  static const double minContextFontSize = 12.0;
+  static const double maxContextFontSize = 32.0;
+
+  static const int defaultWordColor = 0xFFE0E0E0;
+  static const int defaultOrpColor = 0xFFE55324;
+  static const int defaultBackgroundColor = 0xFF121212;
+  static const int defaultHighlightColor = 0x40FFAB00;
+
+  static const double defaultVerticalPosition = 0.5;
+  static const String defaultFontFamily = 'RobotoMono';
+
+  static const String booksSubdir = 'books';
+
+  // ---- RSVP word display layout ----
+  /// Horizontal margin reserved on each side of the word. The focus line
+  /// ignores this and spans full width, so the parent widget must NOT add
+  /// its own horizontal padding.
+  static const double rsvpWordMargin = 32.0;
+
+  /// Minimum font size when auto-scaling long words down.
+  static const double rsvpMinFontSize = 16.0;
+
+  /// Step used to shrink the font when the word does not fit.
+  static const double rsvpFontShrinkStep = 2.0;
+
+  /// Height of the notch triangle above the ORP anchor.
+  static const double rsvpNotchHeight = 6.0;
+
+  /// Vertical gap between the notch and the word.
+  static const double rsvpNotchGap = 4.0;
+
+  /// Vertical gap between the word and the focus line below it.
+  static const double rsvpFocusLineGap = 10.0;
+
+  /// Thickness of the focus line.
+  static const double rsvpFocusLineHeight = 2.0;
+}

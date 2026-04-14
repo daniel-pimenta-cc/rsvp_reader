@@ -1,0 +1,81 @@
+{
+  "@@locale": "en",
+  "appTitle": "RSVP Reader",
+  "library": "Library",
+  "settings": "Settings",
+  "importBook": "Import Book",
+  "emptyLibrary": "Your library is empty",
+  "emptyLibrarySubtitle": "Import an EPUB to get started",
+  "deleteBook": "Delete Book",
+  "deleteBookConfirm": "Are you sure you want to delete \"{title}\"?",
+  "@deleteBookConfirm": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "reading": "Reading",
+  "play": "Play",
+  "pause": "Pause",
+  "wordsPerMinute": "{wpm} WPM",
+  "@wordsPerMinute": {
+    "placeholders": {
+      "wpm": { "type": "int" }
+    }
+  },
+  "chapterOf": "Chapter {current} of {total}",
+  "@chapterOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "progressPercent": "{percent}%",
+  "@progressPercent": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "minutesRemaining": "~{minutes} min",
+  "@minutesRemaining": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "settingsDisplay": "Display",
+  "settingsFontSize": "Font Size",
+  "settingsFontSizeRsvp": "RSVP Font Size",
+  "settingsFontSizeContext": "Reader Font Size",
+  "settingsWordColor": "Word Color",
+  "settingsOrpColor": "Focus Letter Color",
+  "settingsBackgroundColor": "Background Color",
+  "settingsHighlightColor": "Highlight Color",
+  "settingsVerticalPosition": "Vertical Position",
+  "settingsHorizontalPosition": "Horizontal Position",
+  "settingsFont": "Font",
+  "settingsReading": "Reading",
+  "settingsDefaultSpeed": "Default Speed",
+  "settingsSmartTiming": "Smart Timing",
+  "settingsSmartTimingDesc": "Adjust word duration based on punctuation and length",
+  "settingsOrpHighlight": "Focus Letter",
+  "settingsOrpHighlightDesc": "Highlight the optimal recognition point in each word",
+  "settingsRampUp": "Speed Ramp-Up",
+  "settingsRampUpDesc": "Gradually accelerate to target speed when starting playback",
+  "settingsLanguage": "Language",
+  "settingsAbout": "About",
+  "importing": "Importing...",
+  "importError": "Failed to import book",
+  "bookFinished": "You finished the book!",
+  "tapToPause": "Tap to pause",
+  "tapToResume": "Tap to resume",
+  "switchToEreaderMode": "Reading mode",
+  "switchToRsvpMode": "RSVP mode",
+  "settingsFocusLine": "Focus line",
+  "settingsFocusLineDesc": "Show a thin line below the word to anchor your gaze",
+  "settingsFocusLineProgress": "Progress on focus line",
+  "settingsFocusLineProgressDesc": "Use the focus line to also display reading progress",
+  "librarySectionInProgress": "In progress",
+  "librarySectionNotStarted": "Not started",
+  "librarySectionRead": "Read"
+}
