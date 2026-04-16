@@ -1,6 +1,6 @@
 # RSVP Reader
 
-Leitor de livros (EPUB) e artigos web em Flutter com RSVP (Rapid Serial Visual Presentation), para Android/iOS.
+Leitor de livros (EPUB) e artigos web em Flutter com RSVP (Rapid Serial Visual Presentation), para Android/iOS/tablet.
 
 ## Comandos
 
@@ -17,39 +17,69 @@ flutter run                                        # rodar no device/emulador
 
 Feature-based Clean Architecture com Riverpod. Ver [docs/architecture.md](docs/architecture.md).
 
-**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent
+**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent | google_fonts (Lora + Inter)
 
 ## Estrutura de pastas
 
 ```
 lib/
   core/
-    theme/        # app_colors (paleta dual light+dark), app_theme (brightness-aware),
-                  # app_spacing, app_radius, app_elevations, app_motion,
-                  # app_typography (Lora serif + Inter sans), responsive (breakpoints)
-    routing/      # app_router, selected_book_provider (master-detail)
-    constants/    # app_constants, responsive_defaults (font scale por device)
-    widgets/      # section_card, skeleton_loader (reusáveis globais)
-    di/
+    theme/        # design system editorial
+      app_colors    — AppPalette dual (light/dark), AppColors (back-compat)
+      app_theme     — AppTheme.build(brightness:) com 14+ component themes
+      app_typography — Lora (serif headlines) + Inter (sans body) + tabular figures
+      app_spacing   — escala 4/8/12/16/24/32/48
+      app_radius    — sm(6)/md(10)/lg(16)/xl(24) + BorderRadius helpers
+      app_elevations — BoxShadow por brightness (level1..4)
+      app_motion    — duracoes (fast/base/slow/page) + curvas (standard/emphasized/decelerate)
+      responsive    — Breakpoints (compact/medium/expanded), DeviceType enum,
+                      extensions context.isTablet/isLandscape/deviceType,
+                      gridCrossAxisCount(), gridAspectRatio()
+    routing/      # app_router (go_router), selected_book_provider (master-detail)
+    constants/    # app_constants, responsive_defaults (font scale + margins por device)
+    widgets/      # section_card, skeleton_loader (shimmer com AnimationController compartilhado)
     utils/        # orp_calculator, word_timing, html_stripper, text_tokenizer,
-                  # readability_extractor, url_utils, sync_file_name
+                  # readability_extractor, url_utils, sync_file_name, font_mapper
+    di/           # provider overrides (appDatabaseProvider etc.)
     share/        # share_intent_handler (Android share target)
   database/       # Drift: app_database, tables/ (books, reading_progress,
                   # cached_tokens, sync_import_failures, book_source constants), daos/
   features/
-    book_library/    # tela principal com tabs Books/Articles, grid, import, actions
+    book_library/
+      presentation/
+        screens/    library_screen (master-detail host, tabs, listeners)
+        widgets/    book_card, library_list, library_fab, library_appbar_bottom,
+                    library_skeleton, library_empty_state, library_section_header,
+                    reading_progress_bar, reader_placeholder
+        providers/  book_library_provider (categorized stream)
+      data/         book_persistence (persistParsedBook)
     epub_import/     # parsing EPUB -> WordToken, cache de tokens no DB
     article_import/  # fetch URL -> readability -> WordToken, cache de tokens no DB
     library_sync/    # sync de biblioteca (EPUB) para pasta escolhida pelo usuario
-    rsvp_reader/     # motor RSVP (Ticker), display RSVP, modo scroll, controles, settings do leitor
-    settings/        # tela de configuracoes globais
+    rsvp_reader/
+      domain/entities/  rsvp_state, display_settings, word_token, chapter
+      presentation/
+        screens/    rsvp_reader_screen (modes, top bar, side panel host)
+        widgets/    rsvp_word_display, context_scroll_view,
+                    rsvp_controls (dock compositor),
+                    controls_shell, controls_meta_row, controls_progress_row,
+                    controls_transport_row, seek_slider,
+                    wpm_selector (capsule + preset drawer compartilhado),
+                    display_settings_panel + display_settings_widgets (part),
+                    reader_settings_sheet, chapter_list_sheet, reader_side_panel
+        providers/  rsvp_engine_provider, display_settings_provider,
+                    reader_side_panel_provider
+    settings/
+      presentation/
+        screens/    settings_screen (Appearance + DisplaySettingsPanel + Sync + About)
+        providers/  theme_mode_provider (system/light/dark, persiste + inverte cores)
   l10n/         # ARB files (en, pt) + generated/
 ```
 
 ## Conceitos-chave
 
 - **WordToken**: unidade fundamental — cada palavra pre-processada com ORP index e timing multiplier no momento do import. O motor RSVP nao faz nenhum calculo no hot loop.
-- **ORP (Optimal Recognition Point)**: letra de foco a ~30% da palavra, destacada em vermelho. Ver [docs/rsvp-engine.md](docs/rsvp-engine.md).
+- **ORP (Optimal Recognition Point)**: letra de foco a ~30% da palavra, destacada em cor accent. Ver [docs/rsvp-engine.md](docs/rsvp-engine.md).
 - **Duas fontes de conteudo, uma pipeline** (`BookSource`):
   - `epub`: arquivo EPUB importado (file picker ou sync folder).
   - `article`: artigo web importado por URL (dialog manual ou share sheet).
@@ -60,22 +90,27 @@ lib/
   - `ereader`: texto completo sem highlight, sem controles — leitura tradicional
   - Toggle entre rsvp/scroll e ereader via icone no top bar; dentro de rsvp/scroll, play/pause alterna entre eles.
 - **DisplaySettings**: todas as configs visuais e de leitura (cores, fontes, posicoes, toggles, focus line) persistidas via SharedPreferences. Painel unico (`DisplaySettingsPanel`) usado tanto no bottom sheet do leitor quanto na tela full-screen de Settings — fonte unica de verdade para adicionar opcoes.
-- **Biblioteca com tabs**: `LibraryScreen` separa "Livros" (source=epub) de "Artigos" (source=article) via `TabBar`. O FAB muda de acao conforme a tab ativa.
-- **Tema light + dark** com accent laranja #E55324 preservado: paleta editorial ("ink on paper" / "paper"). Toggle em Settings (system/light/dark), persistido via `themeModeProvider`. Tipografia: Lora (serif) em títulos, Inter (sans) em body. Tokens em `lib/core/theme/` (spacing/radius/elevations/motion).
-- **Responsivo + master-detail**: breakpoints em `lib/core/theme/responsive.dart` (compact <600 / medium 600-840 / expanded >840). Grid adaptativo 2/3/4 colunas. Em tablet landscape, `LibraryScreen` renderiza split-view: lista à esquerda (440px) + reader/placeholder à direita — `selectedBookIdProvider` controla qual livro está aberto sem trocar rota. Settings e chapter list do reader viram painel lateral (`ReaderSidePanel`) em tablet landscape; bottom sheet em mobile/portrait.
+- **Tema light + dark**: paleta editorial com tons quentes ("ink on paper" / "paper"), accent laranja #E55324 preservado em ambos. Toggle em Settings via `SegmentedButton` (system/light/dark), persistido em `themeModeProvider`. Ao trocar de brightness, `ThemeModeNotifier` chama `DisplaySettingsNotifier.applyBrightness()` que inverte automaticamente wordColor e backgroundColor para a paleta correspondente — ORP e highlight ficam preservados.
+- **Tipografia editorial**: Lora (serif) em display/headline/title; Inter (sans) em body/label. Font families para RSVP incluem monos (Roboto Mono, JetBrains Mono, Fira Code, Source Code Pro) + serifs (Lora, Source Serif 4). Mapeamento centralizado em `lib/core/utils/font_mapper.dart`.
+- **Responsivo + master-detail**: breakpoints em `responsive.dart` (compact <600 / medium 600-840 / expanded >840). Grid adaptativo 2/3/4 colunas. Em tablet landscape, `LibraryScreen` renderiza split-view: lista a esquerda (440px) + reader/placeholder a direita — `selectedBookIdProvider` controla qual livro esta aberto sem trocar rota. Settings e chapter list do reader viram painel lateral (`ReaderSidePanel` + `readerSidePanelProvider`) em tablet landscape; bottom sheet em mobile/portrait. Context scroll view limita largura a 720px em telas largas (readable line-length editorial).
+- **WPM selector compartilhado**: `WpmSelector` (all-in-one) usado em settings; `WpmCapsule` + `WpmPresetRow` usados separadamente nos controles. Preset drawer gera valores dinamicamente (atual ± incrementos de 50, clamped min/max), auto-centraliza o chip selecionado no scroll. Capsule com +/- faz ajuste fino de 25.
+- **Biblioteca com tabs**: `LibraryScreen` separa "Livros" (source=epub) de "Artigos" (source=article) via `TabBar`. O FAB (`LibraryFab`) muda de acao conforme a tab ativa.
 
 ## Regras
 
 - Todas as strings de UI devem usar i18n (ARB files em `lib/l10n/`). Nunca hardcodar texto PT ou EN.
-- Cores e tamanhos no leitor (e nas telas de settings) vem de `DisplaySettings`, nunca de constantes do theme — telas de configuracao usam as cores escolhidas pelo usuario para preview "ao vivo".
+- **Cores no leitor e painel de DisplaySettings vem de `DisplaySettings`, nunca de `Theme.of(context)`** — para permitir preview "ao vivo". A unica excecao e a secao Appearance em `settings_screen.dart` (toggle de ThemeMode), que usa o theme global.
+- **Cores na biblioteca e chrome do app** (AppBar, cards, FAB, empty states, dialogs) vem de `Theme.of(context).colorScheme`, nunca de `AppColors.*` diretamente.
 - Para adicionar/remover uma opcao de display ou leitura: editar `display_settings_panel.dart` (afeta automaticamente o bottom sheet no leitor E a tela full-screen de settings). Adicionar tambem o campo em `DisplaySettings` + `copyWith` + load/save no `DisplaySettingsNotifier`.
 - Apos alterar tables do Drift ou classes com `@freezed`: rodar `build_runner`.
 - Apos alterar ARB files: rodar `flutter gen-l10n` (l10n.yaml ja configurado).
 - **Persistir livros/artigos**: sempre via `persistParsedBook` (em `lib/features/book_library/data/services/book_persistence.dart`). Nunca duplicar o fluxo insert-book + fan-out de tokens.
 - **Comparar `source`**: usar as constantes de `BookSource` (`lib/database/tables/book_source.dart`), nunca literais `'epub'`/`'article'`.
 - **URLs**: usar `UrlUtils.extractHttpUrl` / `parseWithHttpsFallback` em `lib/core/utils/url_utils.dart` — nao reimplementar parsing ad-hoc.
-- **Sync de biblioteca so inclui EPUB**: `LibrarySyncService` filtra `source=='epub'`. Artigos sao sempre locais (manifesto de sync e formato EPUB).
+- **Font mapping**: usar `mapFontFamily()` de `lib/core/utils/font_mapper.dart` — nao reimplementar switch de nomes em cada widget.
+- **Sync de biblioteca so inclui EPUB**: `LibrarySyncService` filtra `source=='epub'`. Artigos sao sempre locais.
 - Testes unitarios dos core utils sao prioridade (ORP, timing, tokenizer, HTML stripper, readability). HTML stripper deve cobrir tags `_skipTags` para evitar regressao de CSS/JS vazando no texto.
+- **Arquivos pequenos**: widgets extraidos em arquivos focados (1 responsabilidade). Controles do reader: `rsvp_controls.dart` compoe; subwidgets em `controls_*.dart` + `seek_slider.dart`. Biblioteca: `library_screen.dart` compoe; subwidgets em `library_*.dart`.
 
 ## Docs detalhados
 
