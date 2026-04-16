@@ -8,6 +8,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/display_settings.dart';
 import '../providers/display_settings_provider.dart';
 import '../providers/rsvp_engine_provider.dart';
+import 'wpm_selector.dart';
 
 part 'display_settings_widgets.dart';
 
@@ -48,38 +49,17 @@ class DisplaySettingsPanel extends ConsumerWidget {
       children: [
         _SectionHeader(label: l10n.settingsReading, color: settings.wordColor),
 
-        // Default WPM
+        // Default WPM — same capsule + preset drawer used in the reader
+        // transport row, so the muscle memory carries over.
         _SettingRow(
           label: l10n.settingsDefaultSpeed,
           labelColor: settings.wordColor,
-          child: SizedBox(
-            width: 180,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Slider(
-                    value: settings.wpm.toDouble(),
-                    min: AppConstants.minWpm.toDouble(),
-                    max: AppConstants.maxWpm.toDouble(),
-                    divisions: (AppConstants.maxWpm - AppConstants.minWpm) ~/
-                        AppConstants.wpmStep,
-                    onChanged: (v) => _update(
-                        ref, bookId, (s) => s.copyWith(wpm: v.round())),
-                  ),
-                ),
-                SizedBox(
-                  width: 38,
-                  child: Text(
-                    '${settings.wpm}',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                        color: settings.wordColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
+          child: WpmSelector(
+            settings: settings,
+            currentWpm: settings.wpm,
+            labelFormatter: l10n.wordsPerMinute,
+            onChanged: (v) =>
+                _update(ref, bookId, (s) => s.copyWith(wpm: v)),
           ),
         ),
         const SizedBox(height: 12),

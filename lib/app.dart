@@ -6,6 +6,7 @@ import 'core/routing/app_router.dart';
 import 'core/share/share_intent_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'features/article_import/presentation/providers/article_import_provider.dart';
+import 'features/settings/presentation/providers/theme_mode_provider.dart';
 import 'l10n/generated/app_localizations.dart';
 
 /// Surfaces snackbars (progress/error) from listeners that live above
@@ -18,13 +19,16 @@ class RsvpReaderApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return ShareIntentHandler(
       child: _ArticleImportCoordinator(
         child: MaterialApp.router(
           title: 'RSVP Reader',
           debugShowCheckedModeBanner: false,
           scaffoldMessengerKey: rootMessengerKey,
-          theme: AppTheme.build(),
+          theme: AppTheme.build(brightness: Brightness.light),
+          darkTheme: AppTheme.build(brightness: Brightness.dark),
+          themeMode: themeMode,
           routerConfig: appRouter,
           localizationsDelegates: const [
             AppLocalizations.delegate,

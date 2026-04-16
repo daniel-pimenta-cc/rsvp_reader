@@ -3,18 +3,35 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/rsvp_state.dart';
+import '../providers/display_settings_provider.dart';
+import '../providers/reader_side_panel_provider.dart';
 import '../providers/rsvp_engine_provider.dart';
 import '../widgets/context_scroll_view.dart';
 import '../widgets/reader_settings_sheet.dart';
+import '../widgets/reader_side_panel.dart';
 import '../widgets/rsvp_controls.dart';
 import '../widgets/rsvp_word_display.dart';
 
 class RsvpReaderScreen extends ConsumerStatefulWidget {
   final String bookId;
 
-  const RsvpReaderScreen({required this.bookId, super.key});
+  /// Optional override for the back button. When null, the reader uses
+  /// `context.pop()` (standard route-based navigation). When provided, the
+  /// reader calls this instead — used by the tablet-landscape master-detail
+  /// host so the back button clears the selection in place instead of
+  /// popping a non-existent route.
+  final VoidCallback? onClose;
+
+  const RsvpReaderScreen({
+    required this.bookId,
+    this.onClose,
+    super.key,
+  });
 
   @override
   ConsumerState<RsvpReaderScreen> createState() => _RsvpReaderScreenState();
@@ -36,34 +53,71 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
   }
 
   @override
+  void dispose() {
+    // Reset side-panel state so switching between books doesn't keep a
+    // panel open for an unrelated book.
+    Future.microtask(() {
+      if (mounted) return; // still mounted → another reader may need it
+      ref.read(readerSidePanelProvider.notifier).state = ReaderSidePanelMode.none;
+    });
+    super.dispose();
+  }
+
+  bool _useSidePanel(BuildContext context) =>
+      context.isTablet && context.isLandscape;
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(rsvpEngineProvider(widget.bookId));
     final engine = ref.read(rsvpEngineProvider(widget.bookId).notifier);
 
     if (state.isLoading || !_initialized) {
+      // Engine hasn't populated its own copy of DisplaySettings yet, so its
+      // palette is still the (dark) class default. Read the real settings
+      // directly so the loading screen honours the user's theme instead of
+      // flashing a dark card in light mode.
+      final settings = ref.watch(displaySettingsProvider);
       return Scaffold(
-        backgroundColor: state.displaySettings.backgroundColor,
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: settings.backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(color: settings.orpColor),
+        ),
       );
     }
 
+    final readerBody = SafeArea(
+      child: Column(
+        children: [
+          _buildTopBar(state, engine),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: AppDurations.slow,
+              switchInCurve: AppCurves.standard,
+              switchOutCurve: AppCurves.standard,
+              child: _buildModeArea(state, engine),
+            ),
+          ),
+          if (state.mode != ReaderMode.ereader)
+            RsvpControls(bookId: widget.bookId),
+        ],
+      ),
+    );
+
+    final useSidePanel = _useSidePanel(context);
+
     return Scaffold(
       backgroundColor: state.displaySettings.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(state, engine),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: _buildModeArea(state, engine),
-              ),
-            ),
-            if (state.mode != ReaderMode.ereader)
-              RsvpControls(bookId: widget.bookId),
-          ],
-        ),
-      ),
+      body: useSidePanel
+          ? Row(
+              children: [
+                Expanded(child: readerBody),
+                ReaderSidePanel(
+                  bookId: widget.bookId,
+                  settings: state.displaySettings,
+                ),
+              ],
+            )
+          : readerBody,
     );
   }
 
@@ -85,7 +139,6 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     }
   }
 
-  /// RSVP mode — gesture detector only active here, doesn't interfere with scroll.
   Widget _buildRsvpArea(RsvpState state, RsvpEngineNotifier engine) {
     return GestureDetector(
       key: const ValueKey('rsvp'),
@@ -124,17 +177,43 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     );
   }
 
+  void _openSettings(RsvpState state, RsvpEngineNotifier engine) {
+    if (state.isPlaying) engine.pause();
+    if (_useSidePanel(context)) {
+      final current = ref.read(readerSidePanelProvider);
+      ref.read(readerSidePanelProvider.notifier).state =
+          current == ReaderSidePanelMode.settings
+              ? ReaderSidePanelMode.none
+              : ReaderSidePanelMode.settings;
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ReaderSettingsSheet(bookId: widget.bookId),
+    );
+  }
+
   Widget _buildTopBar(RsvpState state, RsvpEngineNotifier engine) {
     final l10n = AppLocalizations.of(context)!;
     final isEreader = state.mode == ReaderMode.ereader;
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       child: Row(
         children: [
           IconButton(
             onPressed: () {
               if (state.isPlaying) engine.pause();
-              context.pop();
+              if (widget.onClose != null) {
+                widget.onClose!();
+              } else {
+                context.pop();
+              }
             },
             icon:
                 Icon(Icons.arrow_back, color: state.displaySettings.wordColor),
@@ -142,9 +221,10 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
           Expanded(
             child: Text(
               state.currentChapterTitle ?? '',
-              style: TextStyle(
-                color: state.displaySettings.wordColor.withAlpha(179),
-                fontSize: 14,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: state.displaySettings.wordColor.withAlpha(200),
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.1,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -160,16 +240,9 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
             ),
           ),
           IconButton(
-            onPressed: () {
-              if (state.isPlaying) engine.pause();
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => ReaderSettingsSheet(bookId: widget.bookId),
-              );
-            },
-            icon: Icon(Icons.tune, color: state.displaySettings.wordColor),
+            onPressed: () => _openSettings(state, engine),
+            icon:
+                Icon(Icons.tune, color: state.displaySettings.wordColor),
           ),
         ],
       ),

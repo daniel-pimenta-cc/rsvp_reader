@@ -7,6 +7,8 @@ const _fontOptions = <({String value, String googleFont, String label})>[
   (value: 'JetBrainsMono', googleFont: 'JetBrains Mono', label: 'JetBrains Mono'),
   (value: 'FiraCode', googleFont: 'Fira Code', label: 'Fira Code'),
   (value: 'SourceCodePro', googleFont: 'Source Code Pro', label: 'Source Code Pro'),
+  (value: 'Lora', googleFont: 'Lora', label: 'Lora (serif)'),
+  (value: 'SourceSerif4', googleFont: 'Source Serif 4', label: 'Source Serif (serif)'),
 ];
 
 const _fontPreviewSample = 'The quick brown fox jumps 0123';

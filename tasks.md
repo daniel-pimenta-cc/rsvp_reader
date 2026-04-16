@@ -22,5 +22,5 @@
 - [x] Import de artigos web por URL (readability extractor em Dart puro, tabs Books/Articles na biblioteca)
 - [x] Share sheet Android (intent-filter + `receive_sharing_intent`, coordinator global de navegação/snackbar em `app.dart`)
 - [ ] Share sheet iOS — Xcode target precisa ser criado num Mac, passos em [docs/share-extension-ios.md](docs/share-extension-ios.md)
-- [ ] Tablet layout pass
+- [x] Tablet layout pass (landscape liberado, grid adaptativo 2/3/4, master-detail em tablet landscape)
 - [ ] Triagem de issues do GitHub

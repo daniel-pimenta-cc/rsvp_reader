@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../../../../core/constants/responsive_defaults.dart';
+import '../../../../core/theme/responsive.dart';
+import '../../../../core/utils/font_mapper.dart';
 import '../../../epub_import/domain/entities/chapter.dart';
 import '../../../epub_import/domain/entities/word_token.dart';
 import '../../domain/entities/display_settings.dart';
@@ -230,6 +233,8 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
     }
 
     final screenHeight = MediaQuery.of(context).size.height;
+    final maxReadableWidth = ResponsiveDefaults.readableMaxWidth(context);
+    final sidePadding = context.deviceType == DeviceType.compact ? 24.0 : 32.0;
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
@@ -248,16 +253,23 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
         }
         return false;
       },
-      child: ScrollablePositionedList.builder(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxReadableWidth),
+          child: ScrollablePositionedList.builder(
         itemCount: _items.length,
         itemScrollController: _scrollController,
         itemPositionsListener: _positionsListener,
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.only(
-          top: screenHeight * 0.35,
-          bottom: screenHeight * 0.5,
-          left: 24,
-          right: 24,
+          top: screenHeight * (context.isTablet && context.isLandscape
+              ? 0.22
+              : 0.35),
+          bottom: screenHeight *
+              (context.isTablet && context.isLandscape ? 0.35 : 0.5),
+          left: sidePadding,
+          right: sidePadding,
         ),
         itemBuilder: (context, index) {
           final item = _items[index];
@@ -268,7 +280,7 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
               child: Text(
                 item.chapterTitle!,
                 style: GoogleFonts.getFont(
-                  _mapFont(settings.fontFamily),
+                  mapFontFamily(settings.fontFamily),
                   fontSize: settings.contextFontSize * 1.2,
                   color: settings.orpColor.withAlpha(200),
                   fontWeight: FontWeight.w700,
@@ -298,6 +310,8 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
             },
           );
         },
+          ),
+        ),
       ),
     );
   }
@@ -380,16 +394,6 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
     return paragraphs;
   }
 
-  String _mapFont(String family) {
-    switch (family) {
-      case 'RobotoMono':
-        return 'Roboto Mono';
-      case 'JetBrainsMono':
-        return 'JetBrains Mono';
-      default:
-        return 'Roboto Mono';
-    }
-  }
 }
 
 class _ParagraphWidget extends StatelessWidget {
@@ -409,13 +413,13 @@ class _ParagraphWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final baseFontSize = settings.contextFontSize;
     final baseStyle = GoogleFonts.getFont(
-      _mapFont(settings.fontFamily),
+      mapFontFamily(settings.fontFamily),
       fontSize: baseFontSize,
       color: settings.wordColor.withAlpha(180),
       height: 1.8,
     );
     final highlightTextStyle = GoogleFonts.getFont(
-      _mapFont(settings.fontFamily),
+      mapFontFamily(settings.fontFamily),
       fontSize: baseFontSize,
       color: settings.wordColor,
       fontWeight: FontWeight.w600,
@@ -466,14 +470,4 @@ class _ParagraphWidget extends StatelessWidget {
     );
   }
 
-  String _mapFont(String family) {
-    switch (family) {
-      case 'RobotoMono':
-        return 'Roboto Mono';
-      case 'JetBrainsMono':
-        return 'JetBrains Mono';
-      default:
-        return 'Roboto Mono';
-    }
-  }
 }

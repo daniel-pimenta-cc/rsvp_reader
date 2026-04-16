@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/article_import_provider.dart';
@@ -58,34 +59,91 @@ class _ImportArticleDialogState extends ConsumerState<ImportArticleDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return AlertDialog(
-      title: Text(l10n.importArticle),
-      content: TextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        keyboardType: TextInputType.url,
-        textInputAction: TextInputAction.go,
-        autocorrect: false,
-        enableSuggestions: false,
-        decoration: InputDecoration(
-          labelText: l10n.importArticleUrlLabel,
-          hintText: l10n.importArticleUrlHint,
-          border: const OutlineInputBorder(),
-        ),
-        onSubmitted: (_) => _submit(),
+      titlePadding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.base,
+        AppSpacing.lg,
+        AppSpacing.base,
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.importArticle, style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.importArticleUrlHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _controller,
+            focusNode: _focusNode,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.go,
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: InputDecoration(
+              labelText: l10n.importArticleUrlLabel,
+              prefixIcon: const Icon(Icons.link, size: 20),
+              suffixIcon: _prefilled
+                  ? IconButton(
+                      tooltip: l10n.cancel,
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        _controller.clear();
+                        setState(() => _prefilled = false);
+                        _focusNode.requestFocus();
+                      },
+                    )
+                  : null,
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          if (_prefilled) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Icon(
+                  Icons.content_paste,
+                  size: 14,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.importArticleClipboardHint,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
       actions: [
-        if (_prefilled)
-          // Let the user discard the clipboard prefill in one tap if it's
-          // not the URL they wanted.
-          TextButton(
-            onPressed: () {
-              _controller.clear();
-              setState(() => _prefilled = false);
-              _focusNode.requestFocus();
-            },
-            child: const Icon(Icons.clear, size: 18),
-          ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.cancel),

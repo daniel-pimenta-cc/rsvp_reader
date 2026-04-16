@@ -1,0 +1,680 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_pt.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'generated/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('pt'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RSVP Reader'**
+  String get appTitle;
+
+  /// No description provided for @library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get library;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @importBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Book'**
+  String get importBook;
+
+  /// No description provided for @emptyLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Your library is empty'**
+  String get emptyLibrary;
+
+  /// No description provided for @emptyLibrarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import an EPUB to get started'**
+  String get emptyLibrarySubtitle;
+
+  /// No description provided for @deleteBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Book'**
+  String get deleteBook;
+
+  /// No description provided for @deleteBookConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{title}\"?'**
+  String deleteBookConfirm(String title);
+
+  /// No description provided for @markAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get markAsRead;
+
+  /// No description provided for @markedAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked \"{title}\" as read'**
+  String markedAsRead(String title);
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get reading;
+
+  /// No description provided for @play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get play;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @wordsPerMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'{wpm} WPM'**
+  String wordsPerMinute(int wpm);
+
+  /// No description provided for @chapterOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter {current} of {total}'**
+  String chapterOf(int current, int total);
+
+  /// No description provided for @progressPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String progressPercent(int percent);
+
+  /// No description provided for @minutesRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'~{minutes} min'**
+  String minutesRemaining(int minutes);
+
+  /// No description provided for @settingsDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settingsDisplay;
+
+  /// No description provided for @settingsFontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Font Size'**
+  String get settingsFontSize;
+
+  /// No description provided for @settingsFontSizeRsvp.
+  ///
+  /// In en, this message translates to:
+  /// **'RSVP Font Size'**
+  String get settingsFontSizeRsvp;
+
+  /// No description provided for @settingsFontSizeContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader Font Size'**
+  String get settingsFontSizeContext;
+
+  /// No description provided for @settingsWordColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Word Color'**
+  String get settingsWordColor;
+
+  /// No description provided for @settingsOrpColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus Letter Color'**
+  String get settingsOrpColor;
+
+  /// No description provided for @settingsBackgroundColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Background Color'**
+  String get settingsBackgroundColor;
+
+  /// No description provided for @settingsHighlightColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight Color'**
+  String get settingsHighlightColor;
+
+  /// No description provided for @settingsVerticalPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Vertical Position'**
+  String get settingsVerticalPosition;
+
+  /// No description provided for @settingsHorizontalPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Horizontal Position'**
+  String get settingsHorizontalPosition;
+
+  /// No description provided for @settingsFont.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get settingsFont;
+
+  /// No description provided for @settingsReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get settingsReading;
+
+  /// No description provided for @settingsDefaultSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Speed'**
+  String get settingsDefaultSpeed;
+
+  /// No description provided for @settingsSmartTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Timing'**
+  String get settingsSmartTiming;
+
+  /// No description provided for @settingsSmartTimingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust word duration based on punctuation and length'**
+  String get settingsSmartTimingDesc;
+
+  /// No description provided for @settingsOrpHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus Letter'**
+  String get settingsOrpHighlight;
+
+  /// No description provided for @settingsOrpHighlightDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight the optimal recognition point in each word'**
+  String get settingsOrpHighlightDesc;
+
+  /// No description provided for @settingsRampUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Ramp-Up'**
+  String get settingsRampUp;
+
+  /// No description provided for @settingsRampUpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradually accelerate to target speed when starting playback'**
+  String get settingsRampUpDesc;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// No description provided for @settingsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAbout;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsThemeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsThemeMode;
+
+  /// No description provided for @themeModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeModeSystem;
+
+  /// No description provided for @themeModeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeModeLight;
+
+  /// No description provided for @themeModeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeModeDark;
+
+  /// No description provided for @readerPlaceholderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a book to begin'**
+  String get readerPlaceholderTitle;
+
+  /// No description provided for @readerPlaceholderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from your library on the left and it\'ll open right here.'**
+  String get readerPlaceholderSubtitle;
+
+  /// No description provided for @importArticleClipboardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pasted from your clipboard'**
+  String get importArticleClipboardHint;
+
+  /// No description provided for @importing.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing...'**
+  String get importing;
+
+  /// No description provided for @importError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import book'**
+  String get importError;
+
+  /// No description provided for @importArticle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import article'**
+  String get importArticle;
+
+  /// No description provided for @importArticleUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Article URL'**
+  String get importArticleUrlLabel;
+
+  /// No description provided for @importArticleUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com/article'**
+  String get importArticleUrlHint;
+
+  /// No description provided for @importArticleCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importArticleCta;
+
+  /// No description provided for @importArticleError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import article'**
+  String get importArticleError;
+
+  /// No description provided for @importArticleFetching.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching article…'**
+  String get importArticleFetching;
+
+  /// No description provided for @libraryTabBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'Books'**
+  String get libraryTabBooks;
+
+  /// No description provided for @libraryTabArticles.
+  ///
+  /// In en, this message translates to:
+  /// **'Articles'**
+  String get libraryTabArticles;
+
+  /// No description provided for @emptyArticles.
+  ///
+  /// In en, this message translates to:
+  /// **'No articles yet'**
+  String get emptyArticles;
+
+  /// No description provided for @emptyArticlesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a URL to read any web article in RSVP'**
+  String get emptyArticlesSubtitle;
+
+  /// No description provided for @bookFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'You finished the book!'**
+  String get bookFinished;
+
+  /// No description provided for @tapToPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to pause'**
+  String get tapToPause;
+
+  /// No description provided for @tapToResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to resume'**
+  String get tapToResume;
+
+  /// No description provided for @switchToEreaderMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading mode'**
+  String get switchToEreaderMode;
+
+  /// No description provided for @switchToRsvpMode.
+  ///
+  /// In en, this message translates to:
+  /// **'RSVP mode'**
+  String get switchToRsvpMode;
+
+  /// No description provided for @settingsFocusLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus line'**
+  String get settingsFocusLine;
+
+  /// No description provided for @settingsFocusLineDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a thin line below the word to anchor your gaze'**
+  String get settingsFocusLineDesc;
+
+  /// No description provided for @settingsFocusLineProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress on focus line'**
+  String get settingsFocusLineProgress;
+
+  /// No description provided for @settingsFocusLineProgressDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the focus line to also display reading progress'**
+  String get settingsFocusLineProgressDesc;
+
+  /// No description provided for @librarySectionInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get librarySectionInProgress;
+
+  /// No description provided for @librarySectionNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get librarySectionNotStarted;
+
+  /// No description provided for @librarySectionRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get librarySectionRead;
+
+  /// No description provided for @settingsSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Library sync'**
+  String get settingsSync;
+
+  /// No description provided for @syncChooseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose sync folder'**
+  String get syncChooseFolder;
+
+  /// No description provided for @syncFolderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get syncFolderLabel;
+
+  /// No description provided for @syncNoFolderSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder selected'**
+  String get syncNoFolderSelected;
+
+  /// No description provided for @syncEpubFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync EPUB files'**
+  String get syncEpubFiles;
+
+  /// No description provided for @syncEpubFilesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy EPUB files to the sync folder so they appear on other devices. Turn off to save cloud space.'**
+  String get syncEpubFilesDesc;
+
+  /// No description provided for @syncAutoSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto sync'**
+  String get syncAutoSync;
+
+  /// No description provided for @syncAutoSyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync automatically when you open the app and when progress changes.'**
+  String get syncAutoSyncDesc;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @syncInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get syncInProgress;
+
+  /// No description provided for @syncLastSyncedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {when}'**
+  String syncLastSyncedAt(String when);
+
+  /// No description provided for @syncNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get syncNever;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed: {error}'**
+  String syncFailed(String error);
+
+  /// No description provided for @syncDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect folder'**
+  String get syncDisconnect;
+
+  /// No description provided for @syncFailedImportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 file failed to import} other{{count} files failed to import}}'**
+  String syncFailedImportsTitle(int count);
+
+  /// No description provided for @syncFailedImportsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'These files are being skipped. Delete or replace them in the sync folder, then tap Retry.'**
+  String get syncFailedImportsHelp;
+
+  /// No description provided for @syncRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get syncRetry;
+
+  /// No description provided for @syncImportingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing {current} of {total}: {fileName}'**
+  String syncImportingProgress(int current, int total, String fileName);
+
+  /// No description provided for @syncHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a local folder on your device. The app saves your library there as JSON + EPUB files. To sync between devices, point a cloud sync app at that folder — for example, Autosync or FolderSync (Android) to mirror it with Google Drive / Dropbox / OneDrive / MEGA, or Syncthing to sync directly peer-to-peer between your own devices.'**
+  String get syncHelp;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'pt'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'pt':
+      return AppLocalizationsPt();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

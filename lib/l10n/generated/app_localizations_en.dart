@@ -1,0 +1,320 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appTitle => 'RSVP Reader';
+
+  @override
+  String get library => 'Library';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get importBook => 'Import Book';
+
+  @override
+  String get emptyLibrary => 'Your library is empty';
+
+  @override
+  String get emptyLibrarySubtitle => 'Import an EPUB to get started';
+
+  @override
+  String get deleteBook => 'Delete Book';
+
+  @override
+  String deleteBookConfirm(String title) {
+    return 'Are you sure you want to delete \"$title\"?';
+  }
+
+  @override
+  String get markAsRead => 'Mark as read';
+
+  @override
+  String markedAsRead(String title) {
+    return 'Marked \"$title\" as read';
+  }
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get reading => 'Reading';
+
+  @override
+  String get play => 'Play';
+
+  @override
+  String get pause => 'Pause';
+
+  @override
+  String wordsPerMinute(int wpm) {
+    return '$wpm WPM';
+  }
+
+  @override
+  String chapterOf(int current, int total) {
+    return 'Chapter $current of $total';
+  }
+
+  @override
+  String progressPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String minutesRemaining(int minutes) {
+    return '~$minutes min';
+  }
+
+  @override
+  String get settingsDisplay => 'Display';
+
+  @override
+  String get settingsFontSize => 'Font Size';
+
+  @override
+  String get settingsFontSizeRsvp => 'RSVP Font Size';
+
+  @override
+  String get settingsFontSizeContext => 'Reader Font Size';
+
+  @override
+  String get settingsWordColor => 'Word Color';
+
+  @override
+  String get settingsOrpColor => 'Focus Letter Color';
+
+  @override
+  String get settingsBackgroundColor => 'Background Color';
+
+  @override
+  String get settingsHighlightColor => 'Highlight Color';
+
+  @override
+  String get settingsVerticalPosition => 'Vertical Position';
+
+  @override
+  String get settingsHorizontalPosition => 'Horizontal Position';
+
+  @override
+  String get settingsFont => 'Font';
+
+  @override
+  String get settingsReading => 'Reading';
+
+  @override
+  String get settingsDefaultSpeed => 'Default Speed';
+
+  @override
+  String get settingsSmartTiming => 'Smart Timing';
+
+  @override
+  String get settingsSmartTimingDesc =>
+      'Adjust word duration based on punctuation and length';
+
+  @override
+  String get settingsOrpHighlight => 'Focus Letter';
+
+  @override
+  String get settingsOrpHighlightDesc =>
+      'Highlight the optimal recognition point in each word';
+
+  @override
+  String get settingsRampUp => 'Speed Ramp-Up';
+
+  @override
+  String get settingsRampUpDesc =>
+      'Gradually accelerate to target speed when starting playback';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsThemeMode => 'Theme';
+
+  @override
+  String get themeModeSystem => 'System';
+
+  @override
+  String get themeModeLight => 'Light';
+
+  @override
+  String get themeModeDark => 'Dark';
+
+  @override
+  String get readerPlaceholderTitle => 'Pick a book to begin';
+
+  @override
+  String get readerPlaceholderSubtitle =>
+      'Select from your library on the left and it\'ll open right here.';
+
+  @override
+  String get importArticleClipboardHint => 'Pasted from your clipboard';
+
+  @override
+  String get importing => 'Importing...';
+
+  @override
+  String get importError => 'Failed to import book';
+
+  @override
+  String get importArticle => 'Import article';
+
+  @override
+  String get importArticleUrlLabel => 'Article URL';
+
+  @override
+  String get importArticleUrlHint => 'https://example.com/article';
+
+  @override
+  String get importArticleCta => 'Import';
+
+  @override
+  String get importArticleError => 'Failed to import article';
+
+  @override
+  String get importArticleFetching => 'Fetching article…';
+
+  @override
+  String get libraryTabBooks => 'Books';
+
+  @override
+  String get libraryTabArticles => 'Articles';
+
+  @override
+  String get emptyArticles => 'No articles yet';
+
+  @override
+  String get emptyArticlesSubtitle =>
+      'Paste a URL to read any web article in RSVP';
+
+  @override
+  String get bookFinished => 'You finished the book!';
+
+  @override
+  String get tapToPause => 'Tap to pause';
+
+  @override
+  String get tapToResume => 'Tap to resume';
+
+  @override
+  String get switchToEreaderMode => 'Reading mode';
+
+  @override
+  String get switchToRsvpMode => 'RSVP mode';
+
+  @override
+  String get settingsFocusLine => 'Focus line';
+
+  @override
+  String get settingsFocusLineDesc =>
+      'Show a thin line below the word to anchor your gaze';
+
+  @override
+  String get settingsFocusLineProgress => 'Progress on focus line';
+
+  @override
+  String get settingsFocusLineProgressDesc =>
+      'Use the focus line to also display reading progress';
+
+  @override
+  String get librarySectionInProgress => 'In progress';
+
+  @override
+  String get librarySectionNotStarted => 'Not started';
+
+  @override
+  String get librarySectionRead => 'Read';
+
+  @override
+  String get settingsSync => 'Library sync';
+
+  @override
+  String get syncChooseFolder => 'Choose sync folder';
+
+  @override
+  String get syncFolderLabel => 'Folder';
+
+  @override
+  String get syncNoFolderSelected => 'No folder selected';
+
+  @override
+  String get syncEpubFiles => 'Sync EPUB files';
+
+  @override
+  String get syncEpubFilesDesc =>
+      'Copy EPUB files to the sync folder so they appear on other devices. Turn off to save cloud space.';
+
+  @override
+  String get syncAutoSync => 'Auto sync';
+
+  @override
+  String get syncAutoSyncDesc =>
+      'Sync automatically when you open the app and when progress changes.';
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String get syncInProgress => 'Syncing…';
+
+  @override
+  String syncLastSyncedAt(String when) {
+    return 'Last synced: $when';
+  }
+
+  @override
+  String get syncNever => 'Never';
+
+  @override
+  String syncFailed(String error) {
+    return 'Sync failed: $error';
+  }
+
+  @override
+  String get syncDisconnect => 'Disconnect folder';
+
+  @override
+  String syncFailedImportsTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files failed to import',
+      one: '1 file failed to import',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncFailedImportsHelp =>
+      'These files are being skipped. Delete or replace them in the sync folder, then tap Retry.';
+
+  @override
+  String get syncRetry => 'Retry';
+
+  @override
+  String syncImportingProgress(int current, int total, String fileName) {
+    return 'Importing $current of $total: $fileName';
+  }
+
+  @override
+  String get syncHelp =>
+      'Pick a local folder on your device. The app saves your library there as JSON + EPUB files. To sync between devices, point a cloud sync app at that folder — for example, Autosync or FolderSync (Android) to mirror it with Google Drive / Dropbox / OneDrive / MEGA, or Syncthing to sync directly peer-to-peer between your own devices.';
+}

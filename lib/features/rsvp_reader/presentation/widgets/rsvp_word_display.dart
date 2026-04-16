@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/responsive_defaults.dart';
+import '../../../../core/utils/font_mapper.dart';
 import '../../../epub_import/domain/entities/word_token.dart';
 import '../../domain/entities/display_settings.dart';
 
@@ -41,12 +43,16 @@ class RsvpWordDisplay extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth;
-          const margin = AppConstants.rsvpWordMargin;
+          final margin = ResponsiveDefaults.rsvpWordMargin(context);
           final usableWidth = maxWidth - margin * 2;
           final anchorX = margin + usableWidth * settings.horizontalPosition;
 
-          // Find the right font size — start at configured, scale down if needed
-          var fontSize = settings.fontSize;
+          // Find the right font size — start at configured (device-scaled
+          // when the user hasn't customized), scale down if needed.
+          final scale = settings.fontSize == AppConstants.defaultFontSize
+              ? ResponsiveDefaults.rsvpFontScale(context)
+              : 1.0;
+          var fontSize = settings.fontSize * scale;
           _Measurement m;
           while (true) {
             m = _measure(beforeOrp, orpChar, afterOrp, fontSize);
@@ -60,7 +66,7 @@ class RsvpWordDisplay extends StatelessWidget {
           // Position word so ORP center aligns with anchorX
           final idealOffset = anchorX - m.beforeWidth - (m.orpWidth / 2);
           // Clamp so full word stays within margins
-          const minOffset = margin;
+          final minOffset = margin;
           final maxOffset = maxWidth - m.totalWidth - margin;
           final offsetX = maxOffset >= minOffset
               ? idealOffset.clamp(minOffset, maxOffset)
@@ -133,7 +139,7 @@ class RsvpWordDisplay extends StatelessWidget {
     double fontSize,
   ) {
     final baseStyle = GoogleFonts.getFont(
-      _mapFontFamily(settings.fontFamily),
+      mapFontFamily(settings.fontFamily),
       fontSize: fontSize,
       color: settings.wordColor,
       fontWeight: FontWeight.w400,
@@ -170,20 +176,6 @@ class RsvpWordDisplay extends StatelessWidget {
     );
   }
 
-  String _mapFontFamily(String family) {
-    switch (family) {
-      case 'RobotoMono':
-        return 'Roboto Mono';
-      case 'JetBrainsMono':
-        return 'JetBrains Mono';
-      case 'FiraCode':
-        return 'Fira Code';
-      case 'SourceCodePro':
-        return 'Source Code Pro';
-      default:
-        return 'Roboto Mono';
-    }
-  }
 }
 
 class _Measurement {

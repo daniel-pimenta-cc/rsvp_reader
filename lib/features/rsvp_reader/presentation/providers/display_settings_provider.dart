@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../library_sync/presentation/providers/library_sync_provider.dart';
 import '../../domain/entities/display_settings.dart';
 
@@ -60,6 +62,22 @@ class DisplaySettingsNotifier extends StateNotifier<DisplaySettings> {
   Future<void> applyFromRemote(DisplaySettings synced) async {
     state = synced;
     await _save();
+  }
+
+  /// Flip the reader's word + background colours to match [brightness]. Called
+  /// from [ThemeModeNotifier] when the resolved theme brightness changes so
+  /// the reader palette stays consistent with the app chrome. Other colours
+  /// (ORP accent, highlight) stay put — those are intentional choices that
+  /// aren't tied to light/dark.
+  Future<void> applyBrightness(Brightness brightness) async {
+    final palette =
+        brightness == Brightness.dark ? AppPalette.dark : AppPalette.light;
+    state = state.copyWith(
+      wordColorValue: palette.onSurface.toARGB32(),
+      backgroundColorValue: palette.background.toARGB32(),
+    );
+    await _save();
+    _notifySyncChanged();
   }
 
   void _notifySyncChanged() {
