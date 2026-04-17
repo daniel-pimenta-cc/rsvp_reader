@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../database/app_database.dart';
+import '../../../../database/daos/cached_tokens_dao.dart';
 import '../../../../database/tables/book_source.dart';
 import '../../../library_sync/presentation/providers/library_sync_provider.dart';
 
@@ -33,6 +34,51 @@ class CategorizedBooks {
 /// filter in [categorizedLibraryProvider] and the empty-state copy.
 enum LibraryKind { books, articles }
 
+/// Progress fraction per book across the whole library, computed in two DB
+/// queries (one for all progress rows, one for all chapter word counts)
+/// instead of N+1. Every library tile and the categorized tabs derive from
+/// this, so closing the reader re-runs O(1) queries instead of O(N).
+final libraryProgressProvider =
+    FutureProvider<Map<String, double>>((ref) async {
+  final books = await ref.watch(bookLibraryProvider.future);
+  final progressDao = ref.read(readingProgressDaoProvider);
+  final tokensDao = ref.read(cachedTokensDaoProvider);
+
+  final results = await Future.wait([
+    progressDao.getAllProgress(),
+    tokensDao.getAllChapterWordCounts(),
+  ]);
+  final progressRows = results[0] as List<ReadingProgressTableData>;
+  final chapterCounts = results[1] as List<ChapterWordCount>;
+
+  final progressByBook = {for (final p in progressRows) p.bookId: p};
+  final chaptersByBook = <String, List<ChapterWordCount>>{};
+  for (final row in chapterCounts) {
+    chaptersByBook.putIfAbsent(row.bookId, () => []).add(row);
+  }
+
+  final out = <String, double>{};
+  for (final book in books) {
+    final progress = progressByBook[book.id];
+    if (progress == null || book.totalWords <= 0) {
+      out[book.id] = 0.0;
+      continue;
+    }
+    final chapters = chaptersByBook[book.id];
+    int wordsBefore = 0;
+    if (chapters != null) {
+      for (final c in chapters) {
+        if (c.chapterIndex < progress.chapterIndex) {
+          wordsBefore += c.wordCount;
+        }
+      }
+    }
+    final globalIdx = wordsBefore + progress.wordIndex;
+    out[book.id] = (globalIdx / book.totalWords).clamp(0.0, 1.0);
+  }
+  return out;
+});
+
 /// Books in the library split into "in progress", "not started", and "read",
 /// filtered by [LibraryKind] (books → source='epub', articles → source='article').
 ///
@@ -43,8 +89,7 @@ enum LibraryKind { books, articles }
 final categorizedLibraryProvider =
     FutureProvider.family<CategorizedBooks, LibraryKind>((ref, kind) async {
   final books = await ref.watch(bookLibraryProvider.future);
-  final progressDao = ref.read(readingProgressDaoProvider);
-  final tokensDao = ref.read(cachedTokensDaoProvider);
+  final progress = await ref.watch(libraryProgressProvider.future);
 
   final wantedSource =
       kind == LibraryKind.articles ? BookSource.article : BookSource.epub;
@@ -55,20 +100,10 @@ final categorizedLibraryProvider =
   final read = <BooksTableData>[];
 
   for (final book in filtered) {
-    final progress = await progressDao.getProgressForBook(book.id);
-    if (progress == null || book.totalWords <= 0) {
+    final fraction = progress[book.id] ?? 0.0;
+    if (fraction <= 0.0 || book.totalWords <= 0) {
       notStarted.add(book);
-      continue;
-    }
-
-    final wordsBefore = await tokensDao.getWordCountBeforeChapter(
-      book.id,
-      progress.chapterIndex,
-    );
-    final globalIdx = wordsBefore + progress.wordIndex;
-    final fraction = (globalIdx / book.totalWords).clamp(0.0, 1.0);
-
-    if (fraction >= 0.99) {
+    } else if (fraction >= 0.99) {
       read.add(book);
     } else {
       inProgress.add(book);
@@ -90,27 +125,12 @@ final categorizedLibraryProvider =
   );
 });
 
-/// Reading progress for a book as a fraction in [0.0, 1.0].
-/// Re-evaluates whenever the book list changes (lastReadAt updates after a
-/// reading session, which causes [bookLibraryProvider] to emit).
+/// Reading progress for a book as a fraction in [0.0, 1.0]. Derived from
+/// [libraryProgressProvider] so all cards share a single pair of DB reads.
 final bookProgressProvider =
     FutureProvider.family<double, String>((ref, bookId) async {
-  // Recompute after each reading session.
-  ref.watch(bookLibraryProvider);
-
-  final progress =
-      await ref.read(readingProgressDaoProvider).getProgressForBook(bookId);
-  if (progress == null) return 0.0;
-
-  final book = await ref.read(booksDaoProvider).getBookById(bookId);
-  if (book == null || book.totalWords <= 0) return 0.0;
-
-  final wordsBefore = await ref
-      .read(cachedTokensDaoProvider)
-      .getWordCountBeforeChapter(bookId, progress.chapterIndex);
-
-  final globalIndex = wordsBefore + progress.wordIndex;
-  return (globalIndex / book.totalWords).clamp(0.0, 1.0);
+  final map = await ref.watch(libraryProgressProvider.future);
+  return map[bookId] ?? 0.0;
 });
 
 /// Delete a book and all its associated data.

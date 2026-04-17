@@ -12,42 +12,58 @@ const _prefix = 'display_';
 class DisplaySettingsNotifier extends StateNotifier<DisplaySettings> {
   final SharedPreferencesAsync _prefs;
   final Ref? _ref;
+  Future<void>? _loading;
 
   DisplaySettingsNotifier(this._prefs, [this._ref])
       : super(const DisplaySettings()) {
     load();
   }
 
-  Future<void> load() async {
+  /// Reads every persisted key once and caches the resulting [Future] so
+  /// subsequent callers (e.g. each reader open) piggyback on the first load
+  /// instead of re-running 15 serial platform-channel calls.
+  Future<void> load() {
+    return _loading ??= _loadImpl();
+  }
+
+  Future<void> _loadImpl() async {
+    final results = await Future.wait<Object?>([
+      _prefs.getInt('${_prefix}wpm'),
+      _prefs.getDouble('${_prefix}fontSize'),
+      _prefs.getDouble('${_prefix}ctxFontSize'),
+      _prefs.getInt('${_prefix}wordColor'),
+      _prefs.getInt('${_prefix}orpColor'),
+      _prefs.getInt('${_prefix}bgColor'),
+      _prefs.getInt('${_prefix}hlColor'),
+      _prefs.getDouble('${_prefix}vPos'),
+      _prefs.getDouble('${_prefix}hPos'),
+      _prefs.getString('${_prefix}font'),
+      _prefs.getBool('${_prefix}showOrp'),
+      _prefs.getBool('${_prefix}smartTiming'),
+      _prefs.getBool('${_prefix}rampUp'),
+      _prefs.getBool('${_prefix}showFocusLine'),
+      _prefs.getBool('${_prefix}focusLineProgress'),
+    ]);
     state = DisplaySettings(
-      wpm: await _prefs.getInt('${_prefix}wpm') ?? AppConstants.defaultWpm,
-      fontSize: await _prefs.getDouble('${_prefix}fontSize') ??
-          AppConstants.defaultFontSize,
-      contextFontSize: await _prefs.getDouble('${_prefix}ctxFontSize') ??
-          AppConstants.defaultContextFontSize,
-      wordColorValue: await _prefs.getInt('${_prefix}wordColor') ??
-          AppConstants.defaultWordColor,
-      orpColorValue: await _prefs.getInt('${_prefix}orpColor') ??
-          AppConstants.defaultOrpColor,
-      backgroundColorValue: await _prefs.getInt('${_prefix}bgColor') ??
-          AppConstants.defaultBackgroundColor,
-      highlightColorValue: await _prefs.getInt('${_prefix}hlColor') ??
-          AppConstants.defaultHighlightColor,
-      verticalPosition: await _prefs.getDouble('${_prefix}vPos') ??
-          AppConstants.defaultVerticalPosition,
-      horizontalPosition: await _prefs.getDouble('${_prefix}hPos') ?? 0.5,
-      fontFamily: await _prefs.getString('${_prefix}font') ??
-          AppConstants.defaultFontFamily,
-      showOrpHighlight:
-          await _prefs.getBool('${_prefix}showOrp') ?? true,
-      smartTiming:
-          await _prefs.getBool('${_prefix}smartTiming') ?? true,
-      rampUp:
-          await _prefs.getBool('${_prefix}rampUp') ?? true,
-      showFocusLine:
-          await _prefs.getBool('${_prefix}showFocusLine') ?? true,
-      focusLineShowsProgress:
-          await _prefs.getBool('${_prefix}focusLineProgress') ?? true,
+      wpm: results[0] as int? ?? AppConstants.defaultWpm,
+      fontSize: results[1] as double? ?? AppConstants.defaultFontSize,
+      contextFontSize:
+          results[2] as double? ?? AppConstants.defaultContextFontSize,
+      wordColorValue: results[3] as int? ?? AppConstants.defaultWordColor,
+      orpColorValue: results[4] as int? ?? AppConstants.defaultOrpColor,
+      backgroundColorValue:
+          results[5] as int? ?? AppConstants.defaultBackgroundColor,
+      highlightColorValue:
+          results[6] as int? ?? AppConstants.defaultHighlightColor,
+      verticalPosition:
+          results[7] as double? ?? AppConstants.defaultVerticalPosition,
+      horizontalPosition: results[8] as double? ?? 0.5,
+      fontFamily: results[9] as String? ?? AppConstants.defaultFontFamily,
+      showOrpHighlight: results[10] as bool? ?? true,
+      smartTiming: results[11] as bool? ?? true,
+      rampUp: results[12] as bool? ?? true,
+      showFocusLine: results[13] as bool? ?? true,
+      focusLineShowsProgress: results[14] as bool? ?? true,
     );
   }
 

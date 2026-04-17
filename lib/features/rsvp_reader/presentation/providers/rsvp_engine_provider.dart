@@ -32,9 +32,21 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   /// Initialize the engine: load cached tokens and restore progress.
   /// Must be called with a [TickerProvider] from the widget's mixin.
   Future<void> initialize(TickerProvider vsync) async {
-    // Load cached tokens from database
+    if (state.chapters.isNotEmpty) return;
+
     final tokensDao = _ref.read(cachedTokensDaoProvider);
-    final cachedRows = await tokensDao.getTokensForBook(state.bookId);
+    final progressDao = _ref.read(readingProgressDaoProvider);
+    final settingsNotifier = _ref.read(displaySettingsProvider.notifier);
+
+    final results = await Future.wait([
+      tokensDao.getTokensForBook(state.bookId),
+      progressDao.getProgressForBook(state.bookId),
+      settingsNotifier.load(),
+    ]);
+    if (!mounted) return;
+
+    final cachedRows = results[0] as List<CachedTokensTableData>;
+    final progress = results[1] as ReadingProgressTableData?;
 
     final chapters = <Chapter>[];
     for (final row in cachedRows) {
@@ -46,10 +58,6 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
 
     if (chapters.isEmpty) return;
 
-    // Load saved progress
-    final progressDao = _ref.read(readingProgressDaoProvider);
-    final progress = await progressDao.getProgressForBook(state.bookId);
-
     final chapterIdx = progress?.chapterIndex ?? 0;
     final wordIdx = progress?.wordIndex ?? 0;
     final wpm = progress?.wpm ?? AppConstants.defaultWpm;
@@ -59,10 +67,8 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
 
     _ticker = vsync.createTicker(_onTick);
 
-    // Ensure display settings are loaded from disk before reading
-    await _ref.read(displaySettingsProvider.notifier).load();
-    final savedSettings = _ref.read(displaySettingsProvider);
-    final displaySettings = savedSettings.copyWith(wpm: wpm);
+    final displaySettings =
+        _ref.read(displaySettingsProvider).copyWith(wpm: wpm);
 
     _lastSavedWordIndex = globalIdx;
 
@@ -294,8 +300,9 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   }
 }
 
-/// Provider family keyed by bookId.
-final rsvpEngineProvider =
-    StateNotifierProvider.family<RsvpEngineNotifier, RsvpState, String>(
+/// Provider family keyed by bookId. `autoDispose` so the per-book engine
+/// (and its full decoded token graph) is released when the reader unmounts.
+final rsvpEngineProvider = StateNotifierProvider.autoDispose
+    .family<RsvpEngineNotifier, RsvpState, String>(
   (ref, bookId) => RsvpEngineNotifier(ref, bookId),
 );

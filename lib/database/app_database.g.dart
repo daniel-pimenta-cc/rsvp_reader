@@ -123,7 +123,7 @@ class $BooksTableTable extends BooksTable
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('epub'),
+    defaultValue: const Constant(BookSource.epub),
   );
   static const VerificationMeta _sourceUrlMeta = const VerificationMeta(
     'sourceUrl',
@@ -354,9 +354,8 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
   /// Null for books imported before the sync-filename feature landed.
   final String? syncFileName;
 
-  /// Origin of the content: `epub` for imported EPUB files, `article` for
-  /// web articles fetched by URL. Drives library tab filtering and whether
-  /// the row participates in EPUB sync.
+  /// Origin of the content. See [BookSource] for the allowed values.
+  /// Drives library tab filtering and whether the row participates in EPUB sync.
   final String source;
 
   /// For `source = article`: the URL it was imported from.

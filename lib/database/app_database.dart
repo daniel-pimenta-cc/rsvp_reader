@@ -4,6 +4,7 @@ import 'daos/books_dao.dart';
 import 'daos/cached_tokens_dao.dart';
 import 'daos/reading_progress_dao.dart';
 import 'daos/sync_import_failures_dao.dart';
+import 'tables/book_source.dart';
 import 'tables/books_table.dart';
 import 'tables/cached_tokens_table.dart';
 import 'tables/reading_progress_table.dart';

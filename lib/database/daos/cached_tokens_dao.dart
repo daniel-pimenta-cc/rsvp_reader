@@ -53,4 +53,38 @@ class CachedTokensDao extends DatabaseAccessor<AppDatabase>
     final row = await query.getSingleOrNull();
     return row?.read(sumExpr) ?? 0;
   }
+
+  /// Returns `(bookId, chapterIndex, wordCount)` for every chapter across the
+  /// whole library in one query, skipping the heavy `tokensJson` blob.
+  /// Callers aggregate in Dart to avoid N+1 queries when computing per-book
+  /// reading progress for the library.
+  Future<List<ChapterWordCount>> getAllChapterWordCounts() async {
+    final query = selectOnly(cachedTokensTable)
+      ..addColumns([
+        cachedTokensTable.bookId,
+        cachedTokensTable.chapterIndex,
+        cachedTokensTable.wordCount,
+      ]);
+    final rows = await query.get();
+    return [
+      for (final r in rows)
+        ChapterWordCount(
+          bookId: r.read(cachedTokensTable.bookId)!,
+          chapterIndex: r.read(cachedTokensTable.chapterIndex)!,
+          wordCount: r.read(cachedTokensTable.wordCount)!,
+        ),
+    ];
+  }
+}
+
+class ChapterWordCount {
+  final String bookId;
+  final int chapterIndex;
+  final int wordCount;
+
+  const ChapterWordCount({
+    required this.bookId,
+    required this.chapterIndex,
+    required this.wordCount,
+  });
 }
