@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,14 +49,13 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
     final cachedRows = results[0] as List<CachedTokensTableData>;
     final progress = results[1] as ReadingProgressTableData?;
 
-    final chapters = <Chapter>[];
-    for (final row in cachedRows) {
-      final tokensList = (jsonDecode(row.tokensJson) as List)
-          .map((j) => WordToken.fromJson(j as Map<String, dynamic>))
-          .toList();
-      chapters.add(Chapter(title: row.chapterTitle, tokens: tokensList));
-    }
+    if (cachedRows.isEmpty) return;
 
+    final chapters = await compute(
+      _decodeChapters,
+      [for (final r in cachedRows) (r.chapterTitle, r.tokensJson)],
+    );
+    if (!mounted) return;
     if (chapters.isEmpty) return;
 
     final chapterIdx = progress?.chapterIndex ?? 0;
@@ -306,3 +306,18 @@ final rsvpEngineProvider = StateNotifierProvider.autoDispose
     .family<RsvpEngineNotifier, RsvpState, String>(
   (ref, bookId) => RsvpEngineNotifier(ref, bookId),
 );
+
+/// Runs in a background isolate. Each record is `(chapterTitle, tokensJson)`.
+/// For a 100k-word book the synchronous version of this blocked the UI
+/// thread for hundreds of milliseconds; offloading it keeps the reader's
+/// entry animation smooth.
+List<Chapter> _decodeChapters(List<(String, String)> rows) {
+  final chapters = <Chapter>[];
+  for (final (title, json) in rows) {
+    final tokens = (jsonDecode(json) as List)
+        .map((j) => WordToken.fromJson(j as Map<String, dynamic>))
+        .toList(growable: false);
+    chapters.add(Chapter(title: title, tokens: tokens));
+  }
+  return chapters;
+}

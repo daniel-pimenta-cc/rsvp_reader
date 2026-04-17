@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -80,41 +82,60 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
     super.dispose();
   }
 
-  /// Build a flat list of items: chapter headers + paragraphs for ALL chapters.
+  /// Single-pass build of scroll items + flat token index.
+  ///
+  /// Walks every token exactly once and, as it goes, splits paragraphs via
+  /// [WordToken.paragraphIndex], appends to `_allTokens`, records sentence
+  /// boundaries, and emits `_ScrollItem.paragraph` whenever a paragraph
+  /// closes. The previous implementation grouped paragraphs into a throwaway
+  /// `List<List<WordToken>>` first and then walked the tokens a second time
+  /// to fill the index — two passes and an extra allocation per paragraph.
   void _buildItems(List<Chapter> chapters) {
     final items = <_ScrollItem>[];
+    final allTokens = <WordToken>[];
+    final tokenPositionMap = HashMap<int, int>();
+    final paragraphBoundaries = <int>[];
+    final sentenceBoundaries = <int>[];
+
     for (final chapter in chapters) {
       items.add(_ScrollItem.header(chapter.title));
-      final paragraphs = _groupByParagraph(chapter.tokens);
-      for (final p in paragraphs) {
-        items.add(_ScrollItem.paragraph(p));
-      }
-    }
-    _items = items;
-    _lastBuiltChapterCount = chapters.length;
+      final tokens = chapter.tokens;
+      if (tokens.isEmpty) continue;
 
-    // Build flat token list and navigation boundaries
-    _allTokens = [];
-    _tokenPositionMap = {};
-    _paragraphBoundaries = [];
-    _sentenceBoundaries = [];
+      List<WordToken>? currentParagraph;
+      int currentParaIdx = -1;
 
-    for (final item in _items) {
-      if (!item.isHeader && item.tokens != null && item.tokens!.isNotEmpty) {
-        final paragraphStart = _allTokens.length;
-        _paragraphBoundaries.add(paragraphStart);
-        _sentenceBoundaries.add(paragraphStart);
-        for (int i = 0; i < item.tokens!.length; i++) {
-          final token = item.tokens![i];
-          final pos = _allTokens.length;
-          _tokenPositionMap[token.globalIndex] = pos;
-          _allTokens.add(token);
-          if (i > 0 && _isSentenceEnd(item.tokens![i - 1].text)) {
-            _sentenceBoundaries.add(pos);
+      for (final token in tokens) {
+        if (token.paragraphIndex != currentParaIdx) {
+          if (currentParagraph != null) {
+            items.add(_ScrollItem.paragraph(currentParagraph));
           }
+          currentParagraph = <WordToken>[];
+          currentParaIdx = token.paragraphIndex;
+          final paraStart = allTokens.length;
+          paragraphBoundaries.add(paraStart);
+          sentenceBoundaries.add(paraStart);
         }
+        final pos = allTokens.length;
+        if (currentParagraph!.isNotEmpty &&
+            _isSentenceEnd(currentParagraph.last.text)) {
+          sentenceBoundaries.add(pos);
+        }
+        currentParagraph.add(token);
+        tokenPositionMap[token.globalIndex] = pos;
+        allTokens.add(token);
+      }
+      if (currentParagraph != null) {
+        items.add(_ScrollItem.paragraph(currentParagraph));
       }
     }
+
+    _items = items;
+    _allTokens = allTokens;
+    _tokenPositionMap = tokenPositionMap;
+    _paragraphBoundaries = paragraphBoundaries;
+    _sentenceBoundaries = sentenceBoundaries;
+    _lastBuiltChapterCount = chapters.length;
   }
 
   void _onPositionsChanged() {
@@ -439,26 +460,6 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
         _highlightIndex.value = item.tokens!.first.globalIndex;
       }
     }
-  }
-
-  List<List<WordToken>> _groupByParagraph(List<WordToken> tokens) {
-    if (tokens.isEmpty) return [];
-
-    final paragraphs = <List<WordToken>>[];
-    var current = <WordToken>[];
-    int lastIdx = tokens.first.paragraphIndex;
-
-    for (final token in tokens) {
-      if (token.paragraphIndex != lastIdx) {
-        paragraphs.add(current);
-        current = [];
-        lastIdx = token.paragraphIndex;
-      }
-      current.add(token);
-    }
-    if (current.isNotEmpty) paragraphs.add(current);
-
-    return paragraphs;
   }
 
 }
