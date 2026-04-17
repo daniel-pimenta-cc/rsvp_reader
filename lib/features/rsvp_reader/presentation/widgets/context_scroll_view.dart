@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/responsive_defaults.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../core/utils/font_mapper.dart';
@@ -202,14 +203,8 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
       final newHighlight = state.globalWordIndex;
       if (_highlightIndex.value != newHighlight) {
         _highlightIndex.value = newHighlight;
-        // If the slider moved us to a different area, scroll there
         if (_didInitialScroll && _scrollController.isAttached) {
-          final targetItem = _findItemIndex(newHighlight);
-          _scrollController.scrollTo(
-            index: targetItem,
-            duration: const Duration(milliseconds: 300),
-            alignment: 0.35,
-          );
+          _scrollToHighlight(newHighlight, animate: true);
         }
       }
     }
@@ -218,17 +213,10 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
 
     if (_items.isEmpty) return const SizedBox.shrink();
 
-    // Jump to current position instantly on first show
     if (!_didInitialScroll) {
       _didInitialScroll = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final targetItem = _findItemIndex(state.globalWordIndex);
-        if (_scrollController.isAttached) {
-          _scrollController.jumpTo(
-            index: targetItem,
-            alignment: 0.35,
-          );
-        }
+        _scrollToHighlight(state.globalWordIndex, animate: false);
       });
     }
 
@@ -244,6 +232,7 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
           } else {
             _isUserScrolling = false;
             _smoothedVelocity = 0.0;
+            _snapToEndIfAtBottom();
             _syncToEngine();
           }
         } else if (notification is ScrollUpdateNotification &&
@@ -261,6 +250,8 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
         itemCount: _items.length,
         itemScrollController: _scrollController,
         itemPositionsListener: _positionsListener,
+        initialScrollIndex: _findItemIndex(state.globalWordIndex),
+        initialAlignment: AppConstants.contextFocusAlignment,
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.only(
           top: screenHeight * (context.isTablet && context.isLandscape
@@ -351,6 +342,82 @@ class _ContextScrollViewState extends ConsumerState<ContextScrollView> {
         return boundaries[prevIdx - 1];
       }
       return 0;
+    }
+  }
+
+  double _wordFractionInItem(int globalWordIndex, int itemIdx) {
+    if (itemIdx < 0 || itemIdx >= _items.length) return 0.0;
+    final item = _items[itemIdx];
+    if (item.isHeader || item.tokens == null || item.tokens!.isEmpty) {
+      return 0.0;
+    }
+    final tokens = item.tokens!;
+    final count = tokens.length;
+    if (count <= 1) return 0.0;
+    final local = globalWordIndex - tokens.first.globalIndex;
+    return (local / (count - 1)).clamp(0.0, 1.0);
+  }
+
+  /// Two-pass scroll: first jump gets the paragraph laid out so
+  /// [ItemPositionsListener] can report its viewport-fraction height, then a
+  /// re-jump offsets by the word's depth inside the paragraph — otherwise
+  /// long paragraphs would push the highlighted word off-screen.
+  void _scrollToHighlight(int globalWordIndex, {required bool animate}) {
+    if (!_scrollController.isAttached) return;
+    final targetItem = _findItemIndex(globalWordIndex);
+    final wordFraction = _wordFractionInItem(globalWordIndex, targetItem);
+    final focus = AppConstants.contextFocusAlignment;
+
+    void jumpOrScroll(double alignment) {
+      if (animate) {
+        _scrollController.scrollTo(
+          index: targetItem,
+          duration: const Duration(milliseconds: 250),
+          alignment: alignment,
+        );
+      } else {
+        _scrollController.jumpTo(
+          index: targetItem,
+          alignment: alignment,
+        );
+      }
+    }
+
+    jumpOrScroll(focus);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.isAttached) return;
+      final positions = _positionsListener.itemPositions.value;
+      ItemPosition? pos;
+      for (final p in positions) {
+        if (p.index == targetItem) {
+          pos = p;
+          break;
+        }
+      }
+      if (pos == null) return;
+      final paragraphHeight = pos.itemTrailingEdge - pos.itemLeadingEdge;
+      if (paragraphHeight <= 0) return;
+      final adjusted = (focus - paragraphHeight * wordFraction)
+          .clamp(-2.0, focus);
+      if ((adjusted - focus).abs() < 0.005) return;
+      jumpOrScroll(adjusted);
+    });
+  }
+
+  void _snapToEndIfAtBottom() {
+    if (_allTokens.isEmpty || _items.isEmpty) return;
+    final lastGlobal = _allTokens.last.globalIndex;
+    if (_highlightIndex.value == lastGlobal) return;
+    final positions = _positionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    final lastItemIdx = _items.length - 1;
+    final atBottom = positions.any(
+      (p) => p.index == lastItemIdx && p.itemTrailingEdge <= 1.0,
+    );
+    if (atBottom) {
+      _highlightIndex.value = lastGlobal;
     }
   }
 

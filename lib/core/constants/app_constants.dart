@@ -24,6 +24,11 @@ abstract final class AppConstants {
   static const int defaultHighlightColor = 0x40FFAB00;
 
   static const double defaultVerticalPosition = 0.5;
+
+  /// Focus alignment (0 = top, 1 = bottom) for the highlighted word in
+  /// the context/ereader viewport. Mirrors `ScrollablePositionedList`'s
+  /// alignment convention.
+  static const double contextFocusAlignment = 0.3;
   static const String defaultFontFamily = 'RobotoMono';
 
   static const String booksSubdir = 'books';

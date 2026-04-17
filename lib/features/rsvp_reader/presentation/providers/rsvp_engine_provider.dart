@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -22,6 +23,8 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   Duration _elapsed = Duration.zero;
   Duration _nextWordAt = Duration.zero;
   int _wordsInSession = 0;
+  Timer? _saveDebounce;
+  int _lastSavedWordIndex = -1;
 
   RsvpEngineNotifier(this._ref, String bookId)
       : super(RsvpState(bookId: bookId));
@@ -60,6 +63,8 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
     await _ref.read(displaySettingsProvider.notifier).load();
     final savedSettings = _ref.read(displaySettingsProvider);
     final displaySettings = savedSettings.copyWith(wpm: wpm);
+
+    _lastSavedWordIndex = globalIdx;
 
     state = state.copyWith(
       chapters: chapters,
@@ -179,6 +184,8 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
       globalWordIndex: clamped,
       currentWord: state.chapters[chapterIdx].tokens[wordIdx],
     );
+
+    if (!state.isPlaying) _scheduleSaveProgress();
   }
 
   void skipForward([int words = AppConstants.skipWordCount]) {
@@ -225,7 +232,21 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
     );
   }
 
+  /// Coalesce rapid saves (e.g. continuous slider drag) into one DB write.
+  void _scheduleSaveProgress() {
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(
+      const Duration(milliseconds: 300),
+      _saveProgress,
+    );
+  }
+
   Future<void> _saveProgress() async {
+    _saveDebounce?.cancel();
+    _saveDebounce = null;
+    if (state.globalWordIndex == _lastSavedWordIndex) return;
+    _lastSavedWordIndex = state.globalWordIndex;
+
     final progressDao = _ref.read(readingProgressDaoProvider);
     await progressDao.upsertProgress(ReadingProgressTableCompanion(
       bookId: Value(state.bookId),
@@ -235,11 +256,9 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
       updatedAt: Value(DateTime.now()),
     ));
 
-    // Update lastReadAt on book
     final booksDao = _ref.read(booksDaoProvider);
     await booksDao.updateLastReadAt(state.bookId);
 
-    // Debounced push to sync folder if configured.
     _ref.read(librarySyncProvider.notifier).schedulePush();
   }
 
@@ -267,6 +286,10 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   @override
   void dispose() {
     _ticker?.dispose();
+    if (_saveDebounce?.isActive ?? false) {
+      _saveDebounce!.cancel();
+      _saveProgress();
+    }
     super.dispose();
   }
 }
