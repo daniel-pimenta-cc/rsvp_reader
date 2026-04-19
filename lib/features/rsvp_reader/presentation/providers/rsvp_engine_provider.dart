@@ -21,6 +21,8 @@ import 'display_settings_provider.dart';
 class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   final Ref _ref;
   Ticker? _ticker;
+  TickerProvider? _vsync;
+  Future<void>? _initFuture;
   Duration _elapsed = Duration.zero;
   Duration _nextWordAt = Duration.zero;
   int _wordsInSession = 0;
@@ -28,13 +30,22 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   int _lastSavedWordIndex = -1;
 
   RsvpEngineNotifier(this._ref, String bookId)
-      : super(RsvpState(bookId: bookId));
+      : super(RsvpState(bookId: bookId)) {
+    _initFuture = _loadBook();
+  }
 
-  /// Initialize the engine: load cached tokens and restore progress.
-  /// Must be called with a [TickerProvider] from the widget's mixin.
-  Future<void> initialize(TickerProvider vsync) async {
-    if (state.chapters.isNotEmpty) return;
+  /// Hand the engine a [TickerProvider] for later [play] calls.
+  ///
+  /// The book is already loading (or finished) by the time this is called;
+  /// the widget no longer blocks data loading on its own mount. The Ticker
+  /// itself is created lazily on first play so pre-warming from outside the
+  /// widget tree stays trivial.
+  Future<void> attachVsync(TickerProvider vsync) {
+    _vsync = vsync;
+    return _initFuture ?? Future.value();
+  }
 
+  Future<void> _loadBook() async {
     final tokensDao = _ref.read(cachedTokensDaoProvider);
     final progressDao = _ref.read(readingProgressDaoProvider);
     final settingsNotifier = _ref.read(displaySettingsProvider.notifier);
@@ -64,8 +75,6 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
 
     final totalWords = chapters.fold<int>(0, (sum, ch) => sum + ch.wordCount);
     final globalIdx = _calculateGlobalIndex(chapters, chapterIdx, wordIdx);
-
-    _ticker = vsync.createTicker(_onTick);
 
     final displaySettings =
         _ref.read(displaySettingsProvider).copyWith(wpm: wpm);
@@ -124,6 +133,10 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   void play() {
     if (state.isPlaying || state.isLoading) return;
     if (state.globalWordIndex >= state.totalWords - 1) return;
+    final vsync = _vsync;
+    if (vsync == null) return;
+
+    _ticker ??= vsync.createTicker(_onTick);
 
     _elapsed = Duration.zero;
     _nextWordAt = Duration.zero;

@@ -39,17 +39,12 @@ class RsvpReaderScreen extends ConsumerStatefulWidget {
 
 class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     with TickerProviderStateMixin {
-  bool _initialized = false;
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ref
-          .read(rsvpEngineProvider(widget.bookId).notifier)
-          .initialize(this);
-      if (mounted) setState(() => _initialized = true);
-    });
+    ref
+        .read(rsvpEngineProvider(widget.bookId).notifier)
+        .attachVsync(this);
   }
 
   @override
@@ -71,18 +66,9 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     final state = ref.watch(rsvpEngineProvider(widget.bookId));
     final engine = ref.read(rsvpEngineProvider(widget.bookId).notifier);
 
-    if (state.isLoading || !_initialized) {
-      // Engine hasn't populated its own copy of DisplaySettings yet, so its
-      // palette is still the (dark) class default. Read the real settings
-      // directly so the loading screen honours the user's theme instead of
-      // flashing a dark card in light mode.
+    if (state.isLoading) {
       final settings = ref.watch(displaySettingsProvider);
-      return Scaffold(
-        backgroundColor: settings.backgroundColor,
-        body: Center(
-          child: CircularProgressIndicator(color: settings.orpColor),
-        ),
-      );
+      return Scaffold(backgroundColor: settings.backgroundColor);
     }
 
     final readerBody = SafeArea(
