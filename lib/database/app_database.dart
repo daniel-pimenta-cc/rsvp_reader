@@ -1,3 +1,16 @@
+import 'package:drift/drift.dart';
+
+import 'daos/books_dao.dart';
+import 'daos/cached_tokens_dao.dart';
+import 'daos/reading_progress_dao.dart';
+import 'daos/sync_import_failures_dao.dart';
+import 'tables/books_table.dart';
+import 'tables/cached_tokens_table.dart';
+import 'tables/reading_progress_table.dart';
+import 'tables/sync_import_failures_table.dart';
+
+part 'app_database.g.dart';
+
 /// Database schema and serialization notes for the local app database.
 ///
 /// - BooksTable (primary key: `id`): stores metadata for each book or
@@ -28,20 +41,6 @@
 /// `reading_progress` row during import. The engine treats a missing row as
 /// "not started" (see `epub_import_provider.dart`), avoiding unnecessary
 /// writes for unread items.
-
-import 'package:drift/drift.dart';
-
-import 'daos/books_dao.dart';
-import 'daos/cached_tokens_dao.dart';
-import 'daos/reading_progress_dao.dart';
-import 'daos/sync_import_failures_dao.dart';
-import 'tables/books_table.dart';
-import 'tables/cached_tokens_table.dart';
-import 'tables/reading_progress_table.dart';
-import 'tables/sync_import_failures_table.dart';
-
-part 'app_database.g.dart';
-
 @DriftDatabase(
   tables: [
     BooksTable,
