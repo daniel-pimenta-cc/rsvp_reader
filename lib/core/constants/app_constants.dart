@@ -28,7 +28,7 @@ abstract final class AppConstants {
   /// Focus alignment (0 = top, 1 = bottom) for the highlighted word in
   /// the context/ereader viewport. Mirrors `ScrollablePositionedList`'s
   /// alignment convention.
-  static const double contextFocusAlignment = 0.3;
+  static const double contextFocusAlignment = 0.5;
   static const String defaultFontFamily = 'RobotoMono';
 
   static const String booksSubdir = 'books';
