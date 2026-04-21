@@ -499,6 +499,9 @@ class _ParagraphWidget extends StatelessWidget {
         TextSpan(
           children: tokens.map((token) {
             final isHighlighted = token.globalIndex == currentGlobalIndex;
+            // Sub-tokens of a hyphenated compound (e.g. "guarda-") are
+            // glued to the next token instead of followed by a space.
+            final joinsNext = token.text.endsWith('-');
             if (isHighlighted) {
               return WidgetSpan(
                 alignment: PlaceholderAlignment.baseline,
@@ -508,7 +511,7 @@ class _ParagraphWidget extends StatelessWidget {
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    margin: const EdgeInsets.only(right: 4),
+                    margin: EdgeInsets.only(right: joinsNext ? 0 : 4),
                     decoration: BoxDecoration(
                       color: settings.highlightColor.withAlpha(
                           (settings.highlightColor.a * 255.0 * 0.7).round().clamp(0, 255)),
@@ -526,7 +529,7 @@ class _ParagraphWidget extends StatelessWidget {
               );
             }
             return TextSpan(
-              text: '${token.text} ',
+              text: joinsNext ? token.text : '${token.text} ',
               style: baseStyle,
               recognizer: onWordTap == null
                   ? null
