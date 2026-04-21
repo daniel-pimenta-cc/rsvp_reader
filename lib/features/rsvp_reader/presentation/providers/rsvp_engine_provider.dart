@@ -71,7 +71,7 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
 
     final chapterIdx = progress?.chapterIndex ?? 0;
     final wordIdx = progress?.wordIndex ?? 0;
-    final wpm = progress?.wpm ?? AppConstants.defaultWpm;
+    final wpm = progress?.wpm ?? _ref.read(displaySettingsProvider).wpm;
 
     final totalWords = chapters.fold<int>(0, (sum, ch) => sum + ch.wordCount);
     final globalIdx = _calculateGlobalIndex(chapters, chapterIdx, wordIdx);
