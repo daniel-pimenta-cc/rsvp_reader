@@ -30,6 +30,10 @@ class BooksTable extends Table {
   /// as a subtitle/attribution in the library card.
   TextColumn get siteName => text().nullable()();
 
+  /// Reader rating: null = unrated, 1..5 otherwise. Rendered on the book
+  /// completion card and persisted so rating survives re-reading.
+  IntColumn get rating => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

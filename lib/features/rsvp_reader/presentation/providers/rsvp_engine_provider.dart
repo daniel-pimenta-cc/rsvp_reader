@@ -246,7 +246,10 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
       if (chapterIdx >= state.chapters.length) {
         // End of book
         _ticker?.stop();
-        state = state.copyWith(isPlaying: false);
+        state = state.copyWith(
+          isPlaying: false,
+          finishTicket: state.finishTicket + 1,
+        );
         _flushSession();
         _saveProgress();
         return;

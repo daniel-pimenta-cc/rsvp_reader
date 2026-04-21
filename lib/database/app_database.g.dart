@@ -147,6 +147,15 @@ class $BooksTableTable extends BooksTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
+  @override
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -162,6 +171,7 @@ class $BooksTableTable extends BooksTable
     source,
     sourceUrl,
     siteName,
+    rating,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -267,6 +277,12 @@ class $BooksTableTable extends BooksTable
         siteName.isAcceptableOrUnknown(data['site_name']!, _siteNameMeta),
       );
     }
+    if (data.containsKey('rating')) {
+      context.handle(
+        _ratingMeta,
+        rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
+      );
+    }
     return context;
   }
 
@@ -328,6 +344,10 @@ class $BooksTableTable extends BooksTable
         DriftSqlType.string,
         data['${effectivePrefix}site_name'],
       ),
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rating'],
+      ),
     );
   }
 
@@ -364,6 +384,10 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
   /// For `source = article`: the site name (extracted by readability), used
   /// as a subtitle/attribution in the library card.
   final String? siteName;
+
+  /// Reader rating: null = unrated, 1..5 otherwise. Rendered on the book
+  /// completion card and persisted so rating survives re-reading.
+  final int? rating;
   const BooksTableData({
     required this.id,
     required this.title,
@@ -378,6 +402,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
     required this.source,
     this.sourceUrl,
     this.siteName,
+    this.rating,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -406,6 +431,9 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
     }
     if (!nullToAbsent || siteName != null) {
       map['site_name'] = Variable<String>(siteName);
+    }
+    if (!nullToAbsent || rating != null) {
+      map['rating'] = Variable<int>(rating);
     }
     return map;
   }
@@ -437,6 +465,9 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
       siteName: siteName == null && nullToAbsent
           ? const Value.absent()
           : Value(siteName),
+      rating: rating == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rating),
     );
   }
 
@@ -459,6 +490,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
       source: serializer.fromJson<String>(json['source']),
       sourceUrl: serializer.fromJson<String?>(json['sourceUrl']),
       siteName: serializer.fromJson<String?>(json['siteName']),
+      rating: serializer.fromJson<int?>(json['rating']),
     );
   }
   @override
@@ -478,6 +510,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
       'source': serializer.toJson<String>(source),
       'sourceUrl': serializer.toJson<String?>(sourceUrl),
       'siteName': serializer.toJson<String?>(siteName),
+      'rating': serializer.toJson<int?>(rating),
     };
   }
 
@@ -495,6 +528,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
     String? source,
     Value<String?> sourceUrl = const Value.absent(),
     Value<String?> siteName = const Value.absent(),
+    Value<int?> rating = const Value.absent(),
   }) => BooksTableData(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -509,6 +543,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
     source: source ?? this.source,
     sourceUrl: sourceUrl.present ? sourceUrl.value : this.sourceUrl,
     siteName: siteName.present ? siteName.value : this.siteName,
+    rating: rating.present ? rating.value : this.rating,
   );
   BooksTableData copyWithCompanion(BooksTableCompanion data) {
     return BooksTableData(
@@ -537,6 +572,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
       source: data.source.present ? data.source.value : this.source,
       sourceUrl: data.sourceUrl.present ? data.sourceUrl.value : this.sourceUrl,
       siteName: data.siteName.present ? data.siteName.value : this.siteName,
+      rating: data.rating.present ? data.rating.value : this.rating,
     );
   }
 
@@ -555,7 +591,8 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
           ..write('syncFileName: $syncFileName, ')
           ..write('source: $source, ')
           ..write('sourceUrl: $sourceUrl, ')
-          ..write('siteName: $siteName')
+          ..write('siteName: $siteName, ')
+          ..write('rating: $rating')
           ..write(')'))
         .toString();
   }
@@ -575,6 +612,7 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
     source,
     sourceUrl,
     siteName,
+    rating,
   );
   @override
   bool operator ==(Object other) =>
@@ -592,7 +630,8 @@ class BooksTableData extends DataClass implements Insertable<BooksTableData> {
           other.syncFileName == this.syncFileName &&
           other.source == this.source &&
           other.sourceUrl == this.sourceUrl &&
-          other.siteName == this.siteName);
+          other.siteName == this.siteName &&
+          other.rating == this.rating);
 }
 
 class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
@@ -609,6 +648,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
   final Value<String> source;
   final Value<String?> sourceUrl;
   final Value<String?> siteName;
+  final Value<int?> rating;
   final Value<int> rowid;
   const BooksTableCompanion({
     this.id = const Value.absent(),
@@ -624,6 +664,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
     this.source = const Value.absent(),
     this.sourceUrl = const Value.absent(),
     this.siteName = const Value.absent(),
+    this.rating = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BooksTableCompanion.insert({
@@ -640,6 +681,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
     this.source = const Value.absent(),
     this.sourceUrl = const Value.absent(),
     this.siteName = const Value.absent(),
+    this.rating = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -659,6 +701,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
     Expression<String>? source,
     Expression<String>? sourceUrl,
     Expression<String>? siteName,
+    Expression<int>? rating,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -675,6 +718,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
       if (source != null) 'source': source,
       if (sourceUrl != null) 'source_url': sourceUrl,
       if (siteName != null) 'site_name': siteName,
+      if (rating != null) 'rating': rating,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -693,6 +737,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
     Value<String>? source,
     Value<String?>? sourceUrl,
     Value<String?>? siteName,
+    Value<int?>? rating,
     Value<int>? rowid,
   }) {
     return BooksTableCompanion(
@@ -709,6 +754,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
       source: source ?? this.source,
       sourceUrl: sourceUrl ?? this.sourceUrl,
       siteName: siteName ?? this.siteName,
+      rating: rating ?? this.rating,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -755,6 +801,9 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
     if (siteName.present) {
       map['site_name'] = Variable<String>(siteName.value);
     }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -777,6 +826,7 @@ class BooksTableCompanion extends UpdateCompanion<BooksTableData> {
           ..write('source: $source, ')
           ..write('sourceUrl: $sourceUrl, ')
           ..write('siteName: $siteName, ')
+          ..write('rating: $rating, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2546,6 +2596,7 @@ typedef $$BooksTableTableCreateCompanionBuilder =
       Value<String> source,
       Value<String?> sourceUrl,
       Value<String?> siteName,
+      Value<int?> rating,
       Value<int> rowid,
     });
 typedef $$BooksTableTableUpdateCompanionBuilder =
@@ -2563,6 +2614,7 @@ typedef $$BooksTableTableUpdateCompanionBuilder =
       Value<String> source,
       Value<String?> sourceUrl,
       Value<String?> siteName,
+      Value<int?> rating,
       Value<int> rowid,
     });
 
@@ -2700,6 +2752,11 @@ class $$BooksTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> readingProgressTableRefs(
     Expression<bool> Function($$ReadingProgressTableTableFilterComposer f) f,
   ) {
@@ -2824,6 +2881,11 @@ class $$BooksTableTableOrderingComposer
     column: $table.siteName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableTableAnnotationComposer
@@ -2885,6 +2947,9 @@ class $$BooksTableTableAnnotationComposer
 
   GeneratedColumn<String> get siteName =>
       $composableBuilder(column: $table.siteName, builder: (column) => column);
+
+  GeneratedColumn<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
 
   Expression<T> readingProgressTableRefs<T extends Object>(
     Expression<T> Function($$ReadingProgressTableTableAnnotationComposer a) f,
@@ -2983,6 +3048,7 @@ class $$BooksTableTableTableManager
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceUrl = const Value.absent(),
                 Value<String?> siteName = const Value.absent(),
+                Value<int?> rating = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BooksTableCompanion(
                 id: id,
@@ -2998,6 +3064,7 @@ class $$BooksTableTableTableManager
                 source: source,
                 sourceUrl: sourceUrl,
                 siteName: siteName,
+                rating: rating,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3015,6 +3082,7 @@ class $$BooksTableTableTableManager
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceUrl = const Value.absent(),
                 Value<String?> siteName = const Value.absent(),
+                Value<int?> rating = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BooksTableCompanion.insert(
                 id: id,
@@ -3030,6 +3098,7 @@ class $$BooksTableTableTableManager
                 source: source,
                 sourceUrl: sourceUrl,
                 siteName: siteName,
+                rating: rating,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

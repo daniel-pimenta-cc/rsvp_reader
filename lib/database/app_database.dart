@@ -64,7 +64,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,6 +84,9 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(readingSessionTable);
             await m.createIndex(readingSessionStartedAtIdx);
             await m.createIndex(readingSessionBookIdIdx);
+          }
+          if (from < 6) {
+            await m.addColumn(booksTable, booksTable.rating);
           }
         },
       );

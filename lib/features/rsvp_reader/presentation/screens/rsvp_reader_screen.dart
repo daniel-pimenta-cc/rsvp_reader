@@ -66,6 +66,17 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     final state = ref.watch(rsvpEngineProvider(widget.bookId));
     final engine = ref.read(rsvpEngineProvider(widget.bookId).notifier);
 
+    ref.listen<RsvpState>(rsvpEngineProvider(widget.bookId), (prev, next) {
+      if (prev != null && next.finishTicket > prev.finishTicket) {
+        // Let the final frame settle (RSVP word display shows "last word")
+        // before pushing the celebratory screen — feels less abrupt.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          context.push('/books/${widget.bookId}/completion');
+        });
+      }
+    });
+
     if (state.isLoading) {
       final settings = ref.watch(displaySettingsProvider);
       return Scaffold(backgroundColor: settings.backgroundColor);

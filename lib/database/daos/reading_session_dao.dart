@@ -90,6 +90,13 @@ class ReadingSessionDao extends DatabaseAccessor<AppDatabase>
         .toList(growable: false);
   }
 
+  Future<List<ReadingSessionTableData>> getAllSessionsForBook(String bookId) {
+    return (select(readingSessionTable)
+          ..where((t) => t.bookId.equals(bookId))
+          ..orderBy([(t) => OrderingTerm.asc(t.startedAt)]))
+        .get();
+  }
+
   Future<int> deleteSessionsForBook(String bookId) {
     return (delete(readingSessionTable)
           ..where((t) => t.bookId.equals(bookId)))

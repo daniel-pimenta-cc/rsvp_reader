@@ -216,5 +216,35 @@
     "placeholders": {
       "percent": { "type": "int" }
     }
+  },
+  "completionHeadline": "You finished",
+  "completionShareCta": "Share",
+  "completionRatingLabel": "Your rating",
+  "completionRatingHint": "Tap a star to rate this book",
+  "completionStatTime": "Reading time",
+  "completionStatWords": "Words read",
+  "completionStatSessions": "Sessions",
+  "completionStatAvgWpm": "Average WPM",
+  "completionStatSpan": "Finished over {days, plural, one{1 day} other{{days} days}}",
+  "@completionStatSpan": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "completionCardHeadline": "Finished!",
+  "completionCardFooter": "{hours}h {minutes}m • {sessions, plural, one{1 session} other{{sessions} sessions}}",
+  "@completionCardFooter": {
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" },
+      "sessions": { "type": "int" }
+    }
+  },
+  "completionShareText": "I just finished \"{title}\" on RSVP Reader."
+  ,
+  "@completionShareText": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
   }
 }

@@ -18,6 +18,12 @@ class RsvpState {
   final ReaderMode mode;
   final DisplaySettings displaySettings;
 
+  /// Increments by 1 each time playback reaches end-of-book organically
+  /// (via `_advanceWord`, not via seek). UI listeners compare the value
+  /// across state changes to trigger the completion screen exactly once
+  /// per finish — a flag would risk re-firing on replay.
+  final int finishTicket;
+
   const RsvpState({
     required this.bookId,
     this.chapters = const [],
@@ -31,6 +37,7 @@ class RsvpState {
     this.isLoading = true,
     this.mode = ReaderMode.scroll,
     this.displaySettings = const DisplaySettings(),
+    this.finishTicket = 0,
   });
 
   double get progress => totalWords > 0 ? globalWordIndex / totalWords : 0;
@@ -59,6 +66,7 @@ class RsvpState {
     bool? isLoading,
     ReaderMode? mode,
     DisplaySettings? displaySettings,
+    int? finishTicket,
   }) {
     return RsvpState(
       bookId: bookId ?? this.bookId,
@@ -73,6 +81,7 @@ class RsvpState {
       isLoading: isLoading ?? this.isLoading,
       mode: mode ?? this.mode,
       displaySettings: displaySettings ?? this.displaySettings,
+      finishTicket: finishTicket ?? this.finishTicket,
     );
   }
 }

@@ -811,6 +811,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{percent}% read'**
   String recapBookProgress(int percent);
+
+  /// No description provided for @completionHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'You finished'**
+  String get completionHeadline;
+
+  /// No description provided for @completionShareCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get completionShareCta;
+
+  /// No description provided for @completionRatingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating'**
+  String get completionRatingLabel;
+
+  /// No description provided for @completionRatingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a star to rate this book'**
+  String get completionRatingHint;
+
+  /// No description provided for @completionStatTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading time'**
+  String get completionStatTime;
+
+  /// No description provided for @completionStatWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Words read'**
+  String get completionStatWords;
+
+  /// No description provided for @completionStatSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get completionStatSessions;
+
+  /// No description provided for @completionStatAvgWpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Average WPM'**
+  String get completionStatAvgWpm;
+
+  /// No description provided for @completionStatSpan.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished over {days, plural, one{1 day} other{{days} days}}'**
+  String completionStatSpan(int days);
+
+  /// No description provided for @completionCardHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished!'**
+  String get completionCardHeadline;
+
+  /// No description provided for @completionCardFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m • {sessions, plural, one{1 session} other{{sessions} sessions}}'**
+  String completionCardFooter(int hours, int minutes, int sessions);
+
+  /// No description provided for @completionShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'I just finished \"{title}\" on RSVP Reader.'**
+  String completionShareText(String title);
 }
 
 class _AppLocalizationsDelegate

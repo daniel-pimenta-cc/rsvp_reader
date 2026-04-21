@@ -425,4 +425,58 @@ class AppLocalizationsPt extends AppLocalizations {
   String recapBookProgress(int percent) {
     return '$percent% lido';
   }
+
+  @override
+  String get completionHeadline => 'Livro finalizado';
+
+  @override
+  String get completionShareCta => 'Compartilhar';
+
+  @override
+  String get completionRatingLabel => 'Sua nota';
+
+  @override
+  String get completionRatingHint => 'Toque em uma estrela para avaliar';
+
+  @override
+  String get completionStatTime => 'Tempo de leitura';
+
+  @override
+  String get completionStatWords => 'Palavras lidas';
+
+  @override
+  String get completionStatSessions => 'Sessões';
+
+  @override
+  String get completionStatAvgWpm => 'WPM médio';
+
+  @override
+  String completionStatSpan(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dias',
+      one: '1 dia',
+    );
+    return 'Concluído em $_temp0';
+  }
+
+  @override
+  String get completionCardHeadline => 'Finalizado!';
+
+  @override
+  String completionCardFooter(int hours, int minutes, int sessions) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sessions,
+      locale: localeName,
+      other: '$sessions sessões',
+      one: '1 sessão',
+    );
+    return '${hours}h ${minutes}m • $_temp0';
+  }
+
+  @override
+  String completionShareText(String title) {
+    return 'Acabei de terminar \"$title\" no RSVP Reader.';
+  }
 }

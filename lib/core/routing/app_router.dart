@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/book_library/presentation/screens/library_screen.dart';
 import '../../features/reading_stats/presentation/providers/monthly_recap_provider.dart';
+import '../../features/reading_stats/presentation/screens/book_completion_screen.dart';
 import '../../features/reading_stats/presentation/screens/monthly_recap_screen.dart';
 import '../../features/reading_stats/presentation/screens/reading_stats_screen.dart';
 import '../../features/rsvp_reader/presentation/screens/rsvp_reader_screen.dart';
@@ -37,6 +38,11 @@ final appRouter = GoRouter(
       path: '/stats/recap',
       builder: (context, state) =>
           MonthlyRecapScreen(month: RecapMonth.current()),
+    ),
+    GoRoute(
+      path: '/books/:bookId/completion',
+      builder: (context, state) =>
+          BookCompletionScreen(bookId: state.pathParameters['bookId']!),
     ),
   ],
 );

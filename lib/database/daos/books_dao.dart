@@ -26,6 +26,11 @@ class BooksDao extends DatabaseAccessor<AppDatabase> with _$BooksDaoMixin {
         .getSingleOrNull();
   }
 
+  Stream<BooksTableData?> watchBookById(String id) {
+    return (select(booksTable)..where((t) => t.id.equals(id)))
+        .watchSingleOrNull();
+  }
+
   Future<void> insertBook(BooksTableCompanion book) {
     return into(booksTable).insert(book);
   }
@@ -33,6 +38,15 @@ class BooksDao extends DatabaseAccessor<AppDatabase> with _$BooksDaoMixin {
   Future<void> updateLastReadAt(String bookId) {
     return (update(booksTable)..where((t) => t.id.equals(bookId))).write(
       BooksTableCompanion(lastReadAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Pass `null` to clear a previously set rating. Any out-of-range value
+  /// is clamped at the call site (we don't enforce here so the rating
+  /// picker can stay the source of truth on validation).
+  Future<void> updateRating(String bookId, int? rating) {
+    return (update(booksTable)..where((t) => t.id.equals(bookId))).write(
+      BooksTableCompanion(rating: Value(rating)),
     );
   }
 
