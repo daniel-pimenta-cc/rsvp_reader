@@ -108,6 +108,50 @@ void main() {
       expect(tokens[0].orpIndex, 2); // 7 chars -> ORP 2
     });
 
+    test('splits hyphenated compound words keeping hyphen on the left', () {
+      final tokens = TextTokenizer.tokenize(
+        'guarda-chuva bem-vindo',
+        chapterIndex: 0,
+        globalOffset: 0,
+      );
+      expect(tokens.map((t) => t.text).toList(),
+          ['guarda-', 'chuva', 'bem-', 'vindo']);
+    });
+
+    test('splits multi-hyphen compounds and preserves trailing punctuation',
+        () {
+      final tokens = TextTokenizer.tokenize(
+        'well-being-test, high-quality.',
+        chapterIndex: 0,
+        globalOffset: 0,
+      );
+      expect(tokens.map((t) => t.text).toList(),
+          ['well-', 'being-', 'test,', 'high-', 'quality.']);
+    });
+
+    test('only first sub-word of a hyphenated paragraph-start is marked', () {
+      final tokens = TextTokenizer.tokenize(
+        'guarda-chuva aberto',
+        chapterIndex: 0,
+        globalOffset: 0,
+      );
+      expect(tokens[0].text, 'guarda-');
+      expect(tokens[0].isParagraphStart, true);
+      expect(tokens[0].isChapterStart, true);
+      expect(tokens[1].text, 'chuva');
+      expect(tokens[1].isParagraphStart, false);
+      expect(tokens[1].isChapterStart, false);
+    });
+
+    test('keeps standalone hyphen as a single token', () {
+      final tokens = TextTokenizer.tokenize(
+        'foo - bar',
+        chapterIndex: 0,
+        globalOffset: 0,
+      );
+      expect(tokens.map((t) => t.text).toList(), ['foo', '-', 'bar']);
+    });
+
     test('timing multiplier is pre-calculated', () {
       final tokens = TextTokenizer.tokenize(
         'word.',

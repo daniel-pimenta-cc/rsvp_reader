@@ -26,34 +26,58 @@ class TextTokenizer {
       if (trimmed.isEmpty) continue;
 
       final words = trimmed.split(RegExp(r'\s+'));
+      bool firstOfParagraph = true;
 
-      for (int w = 0; w < words.length; w++) {
-        final word = words[w].trim();
+      for (final raw in words) {
+        final word = raw.trim();
         if (word.isEmpty) continue;
 
-        final bool isParagraphStart = (w == 0);
-        final bool isChapterStart = (paragraphIndex == 0 && w == 0);
+        for (final subWord in _splitHyphenated(word)) {
+          final bool isParagraphStart = firstOfParagraph;
+          final bool isChapterStart =
+              (paragraphIndex == 0 && firstOfParagraph);
+          firstOfParagraph = false;
 
-        tokens.add(WordToken(
-          text: word,
-          orpIndex: OrpCalculator.calculate(word),
-          timingMultiplier: WordTiming.calculateMultiplier(
-            word,
+          tokens.add(WordToken(
+            text: subWord,
+            orpIndex: OrpCalculator.calculate(subWord),
+            timingMultiplier: WordTiming.calculateMultiplier(
+              subWord,
+              isParagraphStart: isParagraphStart,
+              isChapterStart: isChapterStart,
+            ),
+            globalIndex: globalIndex,
+            chapterIndex: chapterIndex,
+            paragraphIndex: paragraphIndex,
             isParagraphStart: isParagraphStart,
             isChapterStart: isChapterStart,
-          ),
-          globalIndex: globalIndex,
-          chapterIndex: chapterIndex,
-          paragraphIndex: paragraphIndex,
-          isParagraphStart: isParagraphStart,
-          isChapterStart: isChapterStart,
-        ));
-        globalIndex++;
+          ));
+          globalIndex++;
+        }
       }
 
       paragraphIndex++;
     }
 
     return tokens;
+  }
+
+  /// Split an internal-hyphen compound into sub-words, keeping the hyphen
+  /// with the left part so it stays visible as a reading cue
+  /// (`guarda-chuva` -> `[guarda-, chuva]`). Falls back to the whole word
+  /// when the split would produce nothing (e.g. a lone "-").
+  static Iterable<String> _splitHyphenated(String word) sync* {
+    if (!word.contains('-')) {
+      yield word;
+      return;
+    }
+    final matches = RegExp(r'[^-]+-?').allMatches(word).toList();
+    if (matches.isEmpty) {
+      yield word;
+      return;
+    }
+    for (final m in matches) {
+      yield m.group(0)!;
+    }
   }
 }
