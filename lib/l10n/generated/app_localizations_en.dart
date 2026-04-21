@@ -319,4 +319,110 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get syncHelp =>
       'Your library metadata, reading progress and settings sync through a folder the app creates in your Google Drive (\"RSVP Reader\"). Sign in to connect an account; signing out on this device keeps the Drive files intact.';
+
+  @override
+  String get statsTitle => 'Reading stats';
+
+  @override
+  String get statsTabWeekly => 'Last 7 days';
+
+  @override
+  String get statsTabMonthly => 'Last 30 days';
+
+  @override
+  String get statsSummaryWordsRead => 'Words read';
+
+  @override
+  String get statsSummaryTimeSpent => 'Time';
+
+  @override
+  String get statsSummaryAvgWpm => 'Avg WPM';
+
+  @override
+  String get statsSummaryBooksTouched => 'Books';
+
+  @override
+  String get statsChartWordsPerDay => 'Words per day';
+
+  @override
+  String get statsChartTimePerDay => 'Time per day';
+
+  @override
+  String get statsChartWpmTrend => 'WPM trend';
+
+  @override
+  String get statsBookBreakdownTitle => 'By book';
+
+  @override
+  String statsBookBreakdownEntry(int minutes, int sessions) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sessions,
+      locale: localeName,
+      other: '$sessions sessions',
+      one: '1 session',
+    );
+    return '$minutes min • $_temp0';
+  }
+
+  @override
+  String get statsEmptyTitle => 'No reading yet';
+
+  @override
+  String get statsEmptySubtitle =>
+      'Start an RSVP session to see your stats here.';
+
+  @override
+  String statsDurationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String statsDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get statsOtherBooks => 'Other';
+
+  @override
+  String get recapTitle => 'Monthly recap';
+
+  @override
+  String get recapGenerateCta => 'Share this month\'s recap';
+
+  @override
+  String get recapShareCta => 'Share';
+
+  @override
+  String get recapEmptyMonth =>
+      'No reading this month yet — come back after an RSVP session.';
+
+  @override
+  String get recapFinished => 'Finished';
+
+  @override
+  String get recapReading => 'Reading';
+
+  @override
+  String recapStatsFooter(String words, int hours, int minutes) {
+    return '$words words read • ${hours}h ${minutes}m';
+  }
+
+  @override
+  String get recapWordmark => 'RSVP Reader';
+
+  @override
+  String recapMonthHeadline(String month, int year) {
+    return '$month $year';
+  }
+
+  @override
+  String recapShareText(String month) {
+    return 'My $month reading recap from RSVP Reader.';
+  }
+
+  @override
+  String recapBookProgress(int percent) {
+    return '$percent% read';
+  }
 }

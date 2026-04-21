@@ -643,6 +643,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your library metadata, reading progress and settings sync through a folder the app creates in your Google Drive (\"RSVP Reader\"). Sign in to connect an account; signing out on this device keeps the Drive files intact.'**
   String get syncHelp;
+
+  /// No description provided for @statsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading stats'**
+  String get statsTitle;
+
+  /// No description provided for @statsTabWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get statsTabWeekly;
+
+  /// No description provided for @statsTabMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 days'**
+  String get statsTabMonthly;
+
+  /// No description provided for @statsSummaryWordsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Words read'**
+  String get statsSummaryWordsRead;
+
+  /// No description provided for @statsSummaryTimeSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get statsSummaryTimeSpent;
+
+  /// No description provided for @statsSummaryAvgWpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg WPM'**
+  String get statsSummaryAvgWpm;
+
+  /// No description provided for @statsSummaryBooksTouched.
+  ///
+  /// In en, this message translates to:
+  /// **'Books'**
+  String get statsSummaryBooksTouched;
+
+  /// No description provided for @statsChartWordsPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Words per day'**
+  String get statsChartWordsPerDay;
+
+  /// No description provided for @statsChartTimePerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Time per day'**
+  String get statsChartTimePerDay;
+
+  /// No description provided for @statsChartWpmTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'WPM trend'**
+  String get statsChartWpmTrend;
+
+  /// No description provided for @statsBookBreakdownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'By book'**
+  String get statsBookBreakdownTitle;
+
+  /// No description provided for @statsBookBreakdownEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min • {sessions, plural, one{1 session} other{{sessions} sessions}}'**
+  String statsBookBreakdownEntry(int minutes, int sessions);
+
+  /// No description provided for @statsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No reading yet'**
+  String get statsEmptyTitle;
+
+  /// No description provided for @statsEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start an RSVP session to see your stats here.'**
+  String get statsEmptySubtitle;
+
+  /// No description provided for @statsDurationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String statsDurationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @statsDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String statsDurationMinutes(int minutes);
+
+  /// No description provided for @statsOtherBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get statsOtherBooks;
+
+  /// No description provided for @recapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly recap'**
+  String get recapTitle;
+
+  /// No description provided for @recapGenerateCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this month\'s recap'**
+  String get recapGenerateCta;
+
+  /// No description provided for @recapShareCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get recapShareCta;
+
+  /// No description provided for @recapEmptyMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'No reading this month yet — come back after an RSVP session.'**
+  String get recapEmptyMonth;
+
+  /// No description provided for @recapFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get recapFinished;
+
+  /// No description provided for @recapReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get recapReading;
+
+  /// No description provided for @recapStatsFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'{words} words read • {hours}h {minutes}m'**
+  String recapStatsFooter(String words, int hours, int minutes);
+
+  /// No description provided for @recapWordmark.
+  ///
+  /// In en, this message translates to:
+  /// **'RSVP Reader'**
+  String get recapWordmark;
+
+  /// No description provided for @recapMonthHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'{month} {year}'**
+  String recapMonthHeadline(String month, int year);
+
+  /// No description provided for @recapShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'My {month} reading recap from RSVP Reader.'**
+  String recapShareText(String month);
+
+  /// No description provided for @recapBookProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% read'**
+  String recapBookProgress(int percent);
 }
 
 class _AppLocalizationsDelegate

@@ -7,6 +7,7 @@ import '../../database/app_database.dart';
 import '../../database/daos/books_dao.dart';
 import '../../database/daos/cached_tokens_dao.dart';
 import '../../database/daos/reading_progress_dao.dart';
+import '../../database/daos/reading_session_dao.dart';
 import '../../database/daos/sync_import_failures_dao.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -19,6 +20,10 @@ final booksDaoProvider = Provider<BooksDao>((ref) {
 
 final readingProgressDaoProvider = Provider<ReadingProgressDao>((ref) {
   return ref.watch(appDatabaseProvider).readingProgressDao;
+});
+
+final readingSessionDaoProvider = Provider<ReadingSessionDao>((ref) {
+  return ref.watch(appDatabaseProvider).readingSessionDao;
 });
 
 final cachedTokensDaoProvider = Provider<CachedTokensDao>((ref) {

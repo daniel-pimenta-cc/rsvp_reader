@@ -1160,6 +1160,579 @@ class ReadingProgressTableCompanion
   }
 }
 
+class $ReadingSessionTableTable extends ReadingSessionTable
+    with TableInfo<$ReadingSessionTableTable, ReadingSessionTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReadingSessionTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _durationMsMeta = const VerificationMeta(
+    'durationMs',
+  );
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+    'duration_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _wordsReadMeta = const VerificationMeta(
+    'wordsRead',
+  );
+  @override
+  late final GeneratedColumn<int> wordsRead = GeneratedColumn<int>(
+    'words_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startWordIndexMeta = const VerificationMeta(
+    'startWordIndex',
+  );
+  @override
+  late final GeneratedColumn<int> startWordIndex = GeneratedColumn<int>(
+    'start_word_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endWordIndexMeta = const VerificationMeta(
+    'endWordIndex',
+  );
+  @override
+  late final GeneratedColumn<int> endWordIndex = GeneratedColumn<int>(
+    'end_word_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _avgWpmMeta = const VerificationMeta('avgWpm');
+  @override
+  late final GeneratedColumn<int> avgWpm = GeneratedColumn<int>(
+    'avg_wpm',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookId,
+    startedAt,
+    endedAt,
+    durationMs,
+    wordsRead,
+    startWordIndex,
+    endWordIndex,
+    avgWpm,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reading_session_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReadingSessionTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+        _durationMsMeta,
+        durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_durationMsMeta);
+    }
+    if (data.containsKey('words_read')) {
+      context.handle(
+        _wordsReadMeta,
+        wordsRead.isAcceptableOrUnknown(data['words_read']!, _wordsReadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordsReadMeta);
+    }
+    if (data.containsKey('start_word_index')) {
+      context.handle(
+        _startWordIndexMeta,
+        startWordIndex.isAcceptableOrUnknown(
+          data['start_word_index']!,
+          _startWordIndexMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startWordIndexMeta);
+    }
+    if (data.containsKey('end_word_index')) {
+      context.handle(
+        _endWordIndexMeta,
+        endWordIndex.isAcceptableOrUnknown(
+          data['end_word_index']!,
+          _endWordIndexMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_endWordIndexMeta);
+    }
+    if (data.containsKey('avg_wpm')) {
+      context.handle(
+        _avgWpmMeta,
+        avgWpm.isAcceptableOrUnknown(data['avg_wpm']!, _avgWpmMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_avgWpmMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReadingSessionTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReadingSessionTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      )!,
+      durationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_ms'],
+      )!,
+      wordsRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}words_read'],
+      )!,
+      startWordIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_word_index'],
+      )!,
+      endWordIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_word_index'],
+      )!,
+      avgWpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}avg_wpm'],
+      )!,
+    );
+  }
+
+  @override
+  $ReadingSessionTableTable createAlias(String alias) {
+    return $ReadingSessionTableTable(attachedDatabase, alias);
+  }
+}
+
+class ReadingSessionTableData extends DataClass
+    implements Insertable<ReadingSessionTableData> {
+  final String id;
+  final String bookId;
+  final DateTime startedAt;
+  final DateTime endedAt;
+  final int durationMs;
+  final int wordsRead;
+  final int startWordIndex;
+  final int endWordIndex;
+  final int avgWpm;
+  const ReadingSessionTableData({
+    required this.id,
+    required this.bookId,
+    required this.startedAt,
+    required this.endedAt,
+    required this.durationMs,
+    required this.wordsRead,
+    required this.startWordIndex,
+    required this.endWordIndex,
+    required this.avgWpm,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['book_id'] = Variable<String>(bookId);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['ended_at'] = Variable<DateTime>(endedAt);
+    map['duration_ms'] = Variable<int>(durationMs);
+    map['words_read'] = Variable<int>(wordsRead);
+    map['start_word_index'] = Variable<int>(startWordIndex);
+    map['end_word_index'] = Variable<int>(endWordIndex);
+    map['avg_wpm'] = Variable<int>(avgWpm);
+    return map;
+  }
+
+  ReadingSessionTableCompanion toCompanion(bool nullToAbsent) {
+    return ReadingSessionTableCompanion(
+      id: Value(id),
+      bookId: Value(bookId),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      durationMs: Value(durationMs),
+      wordsRead: Value(wordsRead),
+      startWordIndex: Value(startWordIndex),
+      endWordIndex: Value(endWordIndex),
+      avgWpm: Value(avgWpm),
+    );
+  }
+
+  factory ReadingSessionTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReadingSessionTableData(
+      id: serializer.fromJson<String>(json['id']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime>(json['endedAt']),
+      durationMs: serializer.fromJson<int>(json['durationMs']),
+      wordsRead: serializer.fromJson<int>(json['wordsRead']),
+      startWordIndex: serializer.fromJson<int>(json['startWordIndex']),
+      endWordIndex: serializer.fromJson<int>(json['endWordIndex']),
+      avgWpm: serializer.fromJson<int>(json['avgWpm']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'bookId': serializer.toJson<String>(bookId),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime>(endedAt),
+      'durationMs': serializer.toJson<int>(durationMs),
+      'wordsRead': serializer.toJson<int>(wordsRead),
+      'startWordIndex': serializer.toJson<int>(startWordIndex),
+      'endWordIndex': serializer.toJson<int>(endWordIndex),
+      'avgWpm': serializer.toJson<int>(avgWpm),
+    };
+  }
+
+  ReadingSessionTableData copyWith({
+    String? id,
+    String? bookId,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int? durationMs,
+    int? wordsRead,
+    int? startWordIndex,
+    int? endWordIndex,
+    int? avgWpm,
+  }) => ReadingSessionTableData(
+    id: id ?? this.id,
+    bookId: bookId ?? this.bookId,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt ?? this.endedAt,
+    durationMs: durationMs ?? this.durationMs,
+    wordsRead: wordsRead ?? this.wordsRead,
+    startWordIndex: startWordIndex ?? this.startWordIndex,
+    endWordIndex: endWordIndex ?? this.endWordIndex,
+    avgWpm: avgWpm ?? this.avgWpm,
+  );
+  ReadingSessionTableData copyWithCompanion(ReadingSessionTableCompanion data) {
+    return ReadingSessionTableData(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      durationMs: data.durationMs.present
+          ? data.durationMs.value
+          : this.durationMs,
+      wordsRead: data.wordsRead.present ? data.wordsRead.value : this.wordsRead,
+      startWordIndex: data.startWordIndex.present
+          ? data.startWordIndex.value
+          : this.startWordIndex,
+      endWordIndex: data.endWordIndex.present
+          ? data.endWordIndex.value
+          : this.endWordIndex,
+      avgWpm: data.avgWpm.present ? data.avgWpm.value : this.avgWpm,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingSessionTableData(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('wordsRead: $wordsRead, ')
+          ..write('startWordIndex: $startWordIndex, ')
+          ..write('endWordIndex: $endWordIndex, ')
+          ..write('avgWpm: $avgWpm')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bookId,
+    startedAt,
+    endedAt,
+    durationMs,
+    wordsRead,
+    startWordIndex,
+    endWordIndex,
+    avgWpm,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReadingSessionTableData &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.durationMs == this.durationMs &&
+          other.wordsRead == this.wordsRead &&
+          other.startWordIndex == this.startWordIndex &&
+          other.endWordIndex == this.endWordIndex &&
+          other.avgWpm == this.avgWpm);
+}
+
+class ReadingSessionTableCompanion
+    extends UpdateCompanion<ReadingSessionTableData> {
+  final Value<String> id;
+  final Value<String> bookId;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> endedAt;
+  final Value<int> durationMs;
+  final Value<int> wordsRead;
+  final Value<int> startWordIndex;
+  final Value<int> endWordIndex;
+  final Value<int> avgWpm;
+  final Value<int> rowid;
+  const ReadingSessionTableCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.wordsRead = const Value.absent(),
+    this.startWordIndex = const Value.absent(),
+    this.endWordIndex = const Value.absent(),
+    this.avgWpm = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReadingSessionTableCompanion.insert({
+    required String id,
+    required String bookId,
+    required DateTime startedAt,
+    required DateTime endedAt,
+    required int durationMs,
+    required int wordsRead,
+    required int startWordIndex,
+    required int endWordIndex,
+    required int avgWpm,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       bookId = Value(bookId),
+       startedAt = Value(startedAt),
+       endedAt = Value(endedAt),
+       durationMs = Value(durationMs),
+       wordsRead = Value(wordsRead),
+       startWordIndex = Value(startWordIndex),
+       endWordIndex = Value(endWordIndex),
+       avgWpm = Value(avgWpm);
+  static Insertable<ReadingSessionTableData> custom({
+    Expression<String>? id,
+    Expression<String>? bookId,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? durationMs,
+    Expression<int>? wordsRead,
+    Expression<int>? startWordIndex,
+    Expression<int>? endWordIndex,
+    Expression<int>? avgWpm,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (wordsRead != null) 'words_read': wordsRead,
+      if (startWordIndex != null) 'start_word_index': startWordIndex,
+      if (endWordIndex != null) 'end_word_index': endWordIndex,
+      if (avgWpm != null) 'avg_wpm': avgWpm,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReadingSessionTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? bookId,
+    Value<DateTime>? startedAt,
+    Value<DateTime>? endedAt,
+    Value<int>? durationMs,
+    Value<int>? wordsRead,
+    Value<int>? startWordIndex,
+    Value<int>? endWordIndex,
+    Value<int>? avgWpm,
+    Value<int>? rowid,
+  }) {
+    return ReadingSessionTableCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      durationMs: durationMs ?? this.durationMs,
+      wordsRead: wordsRead ?? this.wordsRead,
+      startWordIndex: startWordIndex ?? this.startWordIndex,
+      endWordIndex: endWordIndex ?? this.endWordIndex,
+      avgWpm: avgWpm ?? this.avgWpm,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (wordsRead.present) {
+      map['words_read'] = Variable<int>(wordsRead.value);
+    }
+    if (startWordIndex.present) {
+      map['start_word_index'] = Variable<int>(startWordIndex.value);
+    }
+    if (endWordIndex.present) {
+      map['end_word_index'] = Variable<int>(endWordIndex.value);
+    }
+    if (avgWpm.present) {
+      map['avg_wpm'] = Variable<int>(avgWpm.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingSessionTableCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('wordsRead: $wordsRead, ')
+          ..write('startWordIndex: $startWordIndex, ')
+          ..write('endWordIndex: $endWordIndex, ')
+          ..write('avgWpm: $avgWpm, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $CachedTokensTableTable extends CachedTokensTable
     with TableInfo<$CachedTokensTableTable, CachedTokensTableData> {
   @override
@@ -1917,12 +2490,25 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BooksTableTable booksTable = $BooksTableTable(this);
   late final $ReadingProgressTableTable readingProgressTable =
       $ReadingProgressTableTable(this);
+  late final $ReadingSessionTableTable readingSessionTable =
+      $ReadingSessionTableTable(this);
   late final $CachedTokensTableTable cachedTokensTable =
       $CachedTokensTableTable(this);
   late final $SyncImportFailuresTableTable syncImportFailuresTable =
       $SyncImportFailuresTableTable(this);
+  late final Index readingSessionStartedAtIdx = Index(
+    'reading_session_started_at_idx',
+    'CREATE INDEX reading_session_started_at_idx ON reading_session_table (started_at)',
+  );
+  late final Index readingSessionBookIdIdx = Index(
+    'reading_session_book_id_idx',
+    'CREATE INDEX reading_session_book_id_idx ON reading_session_table (book_id)',
+  );
   late final BooksDao booksDao = BooksDao(this as AppDatabase);
   late final ReadingProgressDao readingProgressDao = ReadingProgressDao(
+    this as AppDatabase,
+  );
+  late final ReadingSessionDao readingSessionDao = ReadingSessionDao(
     this as AppDatabase,
   );
   late final CachedTokensDao cachedTokensDao = CachedTokensDao(
@@ -1937,8 +2523,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     booksTable,
     readingProgressTable,
+    readingSessionTable,
     cachedTokensTable,
     syncImportFailuresTable,
+    readingSessionStartedAtIdx,
+    readingSessionBookIdIdx,
   ];
 }
 
@@ -2872,6 +3461,304 @@ typedef $$ReadingProgressTableTableProcessedTableManager =
       ReadingProgressTableData,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$ReadingSessionTableTableCreateCompanionBuilder =
+    ReadingSessionTableCompanion Function({
+      required String id,
+      required String bookId,
+      required DateTime startedAt,
+      required DateTime endedAt,
+      required int durationMs,
+      required int wordsRead,
+      required int startWordIndex,
+      required int endWordIndex,
+      required int avgWpm,
+      Value<int> rowid,
+    });
+typedef $$ReadingSessionTableTableUpdateCompanionBuilder =
+    ReadingSessionTableCompanion Function({
+      Value<String> id,
+      Value<String> bookId,
+      Value<DateTime> startedAt,
+      Value<DateTime> endedAt,
+      Value<int> durationMs,
+      Value<int> wordsRead,
+      Value<int> startWordIndex,
+      Value<int> endWordIndex,
+      Value<int> avgWpm,
+      Value<int> rowid,
+    });
+
+class $$ReadingSessionTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ReadingSessionTableTable> {
+  $$ReadingSessionTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get wordsRead => $composableBuilder(
+    column: $table.wordsRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startWordIndex => $composableBuilder(
+    column: $table.startWordIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endWordIndex => $composableBuilder(
+    column: $table.endWordIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get avgWpm => $composableBuilder(
+    column: $table.avgWpm,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReadingSessionTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReadingSessionTableTable> {
+  $$ReadingSessionTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get wordsRead => $composableBuilder(
+    column: $table.wordsRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startWordIndex => $composableBuilder(
+    column: $table.startWordIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endWordIndex => $composableBuilder(
+    column: $table.endWordIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get avgWpm => $composableBuilder(
+    column: $table.avgWpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReadingSessionTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReadingSessionTableTable> {
+  $$ReadingSessionTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get wordsRead =>
+      $composableBuilder(column: $table.wordsRead, builder: (column) => column);
+
+  GeneratedColumn<int> get startWordIndex => $composableBuilder(
+    column: $table.startWordIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endWordIndex => $composableBuilder(
+    column: $table.endWordIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get avgWpm =>
+      $composableBuilder(column: $table.avgWpm, builder: (column) => column);
+}
+
+class $$ReadingSessionTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReadingSessionTableTable,
+          ReadingSessionTableData,
+          $$ReadingSessionTableTableFilterComposer,
+          $$ReadingSessionTableTableOrderingComposer,
+          $$ReadingSessionTableTableAnnotationComposer,
+          $$ReadingSessionTableTableCreateCompanionBuilder,
+          $$ReadingSessionTableTableUpdateCompanionBuilder,
+          (
+            ReadingSessionTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ReadingSessionTableTable,
+              ReadingSessionTableData
+            >,
+          ),
+          ReadingSessionTableData,
+          PrefetchHooks Function()
+        > {
+  $$ReadingSessionTableTableTableManager(
+    _$AppDatabase db,
+    $ReadingSessionTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReadingSessionTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReadingSessionTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ReadingSessionTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime> endedAt = const Value.absent(),
+                Value<int> durationMs = const Value.absent(),
+                Value<int> wordsRead = const Value.absent(),
+                Value<int> startWordIndex = const Value.absent(),
+                Value<int> endWordIndex = const Value.absent(),
+                Value<int> avgWpm = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadingSessionTableCompanion(
+                id: id,
+                bookId: bookId,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                durationMs: durationMs,
+                wordsRead: wordsRead,
+                startWordIndex: startWordIndex,
+                endWordIndex: endWordIndex,
+                avgWpm: avgWpm,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String bookId,
+                required DateTime startedAt,
+                required DateTime endedAt,
+                required int durationMs,
+                required int wordsRead,
+                required int startWordIndex,
+                required int endWordIndex,
+                required int avgWpm,
+                Value<int> rowid = const Value.absent(),
+              }) => ReadingSessionTableCompanion.insert(
+                id: id,
+                bookId: bookId,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                durationMs: durationMs,
+                wordsRead: wordsRead,
+                startWordIndex: startWordIndex,
+                endWordIndex: endWordIndex,
+                avgWpm: avgWpm,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReadingSessionTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReadingSessionTableTable,
+      ReadingSessionTableData,
+      $$ReadingSessionTableTableFilterComposer,
+      $$ReadingSessionTableTableOrderingComposer,
+      $$ReadingSessionTableTableAnnotationComposer,
+      $$ReadingSessionTableTableCreateCompanionBuilder,
+      $$ReadingSessionTableTableUpdateCompanionBuilder,
+      (
+        ReadingSessionTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ReadingSessionTableTable,
+          ReadingSessionTableData
+        >,
+      ),
+      ReadingSessionTableData,
+      PrefetchHooks Function()
+    >;
 typedef $$CachedTokensTableTableCreateCompanionBuilder =
     CachedTokensTableCompanion Function({
       Value<int> id,
@@ -3438,6 +4325,8 @@ class $AppDatabaseManager {
       $$BooksTableTableTableManager(_db, _db.booksTable);
   $$ReadingProgressTableTableTableManager get readingProgressTable =>
       $$ReadingProgressTableTableTableManager(_db, _db.readingProgressTable);
+  $$ReadingSessionTableTableTableManager get readingSessionTable =>
+      $$ReadingSessionTableTableTableManager(_db, _db.readingSessionTable);
   $$CachedTokensTableTableTableManager get cachedTokensTable =>
       $$CachedTokensTableTableTableManager(_db, _db.cachedTokensTable);
   $$SyncImportFailuresTableTableTableManager get syncImportFailuresTable =>

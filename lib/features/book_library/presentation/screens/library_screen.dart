@@ -99,6 +99,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         title: Text(l10n.appTitle),
         actions: [
           IconButton(
+            icon: const Icon(Icons.bar_chart_outlined),
+            tooltip: l10n.statsTitle,
+            onPressed: () => context.push('/stats'),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
           ),

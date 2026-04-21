@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/providers.dart';
@@ -28,6 +29,10 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   int _wordsInSession = 0;
   Timer? _saveDebounce;
   int _lastSavedWordIndex = -1;
+
+  DateTime? _sessionStartedAt;
+  int? _sessionStartWordIndex;
+  static const _uuid = Uuid();
 
   RsvpEngineNotifier(this._ref, String bookId)
       : super(RsvpState(bookId: bookId)) {
@@ -141,6 +146,8 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
     _elapsed = Duration.zero;
     _nextWordAt = Duration.zero;
     _wordsInSession = 0;
+    _sessionStartedAt = DateTime.now();
+    _sessionStartWordIndex = state.globalWordIndex;
     _ticker?.start();
     state = state.copyWith(isPlaying: true, mode: ReaderMode.rsvp);
   }
@@ -149,6 +156,7 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
     if (!state.isPlaying) return;
     _ticker?.stop();
     state = state.copyWith(isPlaying: false, mode: ReaderMode.scroll);
+    _flushSession();
     _saveProgress();
   }
 
@@ -163,6 +171,7 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   void enterEreaderMode() {
     if (state.isPlaying) {
       _ticker?.stop();
+      _flushSession();
       _saveProgress();
     }
     state = state.copyWith(isPlaying: false, mode: ReaderMode.ereader);
@@ -238,6 +247,7 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
         // End of book
         _ticker?.stop();
         state = state.copyWith(isPlaying: false);
+        _flushSession();
         _saveProgress();
         return;
       }
@@ -249,6 +259,38 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
       globalWordIndex: state.globalWordIndex + 1,
       currentWord: state.chapters[chapterIdx].tokens[wordIdx],
     );
+  }
+
+  /// Persists the current session if it meets minimum thresholds
+  /// (see [computeSessionAvgWpm]). Safe to call multiple times — clears
+  /// session state on first call. Fires DAO insert as fire-and-forget
+  /// so pause() doesn't lag on DB write.
+  void _flushSession() {
+    final startedAt = _sessionStartedAt;
+    final startIdx = _sessionStartWordIndex;
+    _sessionStartedAt = null;
+    _sessionStartWordIndex = null;
+    if (startedAt == null || startIdx == null) return;
+
+    final durationMs = _elapsed.inMilliseconds;
+    final wordsRead = _wordsInSession;
+    final avgWpm = computeSessionAvgWpm(durationMs, wordsRead);
+    if (avgWpm == null) return;
+
+    final dao = _ref.read(readingSessionDaoProvider);
+    unawaited(dao.insertSession(
+      ReadingSessionTableCompanion.insert(
+        id: _uuid.v4(),
+        bookId: state.bookId,
+        startedAt: startedAt,
+        endedAt: DateTime.now(),
+        durationMs: durationMs,
+        wordsRead: wordsRead,
+        startWordIndex: startIdx,
+        endWordIndex: state.globalWordIndex,
+        avgWpm: avgWpm,
+      ),
+    ));
   }
 
   /// Coalesce rapid saves (e.g. continuous slider drag) into one DB write.
@@ -305,6 +347,7 @@ class RsvpEngineNotifier extends StateNotifier<RsvpState> {
   @override
   void dispose() {
     _ticker?.dispose();
+    _flushSession();
     if (_saveDebounce?.isActive ?? false) {
       _saveDebounce!.cancel();
       _saveProgress();
@@ -319,6 +362,17 @@ final rsvpEngineProvider = StateNotifierProvider.autoDispose
     .family<RsvpEngineNotifier, RsvpState, String>(
   (ref, bookId) => RsvpEngineNotifier(ref, bookId),
 );
+
+/// Returns the rounded avg WPM for a session with [durationMs] elapsed
+/// and [wordsRead] ticks — or `null` if the session should be dropped as
+/// noise (below minimum duration or word count). The thresholds filter
+/// accidental taps on the play button.
+int? computeSessionAvgWpm(int durationMs, int wordsRead) {
+  const minDurationMs = 3000;
+  const minWords = 5;
+  if (durationMs < minDurationMs || wordsRead < minWords) return null;
+  return (wordsRead * 60000 / durationMs).round();
+}
 
 /// Runs in a background isolate. Each record is `(chapterTitle, tokensJson)`.
 /// For a 100k-word book the synchronous version of this blocked the UI

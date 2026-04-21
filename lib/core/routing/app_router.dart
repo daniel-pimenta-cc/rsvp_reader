@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/book_library/presentation/screens/library_screen.dart';
+import '../../features/reading_stats/presentation/providers/monthly_recap_provider.dart';
+import '../../features/reading_stats/presentation/screens/monthly_recap_screen.dart';
+import '../../features/reading_stats/presentation/screens/reading_stats_screen.dart';
 import '../../features/rsvp_reader/presentation/screens/rsvp_reader_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 
@@ -25,6 +28,15 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/stats',
+      builder: (context, state) => const ReadingStatsScreen(),
+    ),
+    GoRoute(
+      path: '/stats/recap',
+      builder: (context, state) =>
+          MonthlyRecapScreen(month: RecapMonth.current()),
     ),
   ],
 );

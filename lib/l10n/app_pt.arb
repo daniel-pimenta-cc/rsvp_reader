@@ -122,5 +122,73 @@
       "fileName": { "type": "String" }
     }
   },
-  "syncHelp": "Os metadados da biblioteca, progresso de leitura e configurações sincronizam através de uma pasta que o app cria no seu Google Drive (\"RSVP Reader\"). Entre com uma conta para conectar; desconectar neste dispositivo não apaga os arquivos no Drive."
+  "syncHelp": "Os metadados da biblioteca, progresso de leitura e configurações sincronizam através de uma pasta que o app cria no seu Google Drive (\"RSVP Reader\"). Entre com uma conta para conectar; desconectar neste dispositivo não apaga os arquivos no Drive.",
+  "statsTitle": "Estatísticas",
+  "statsTabWeekly": "Últimos 7 dias",
+  "statsTabMonthly": "Últimos 30 dias",
+  "statsSummaryWordsRead": "Palavras lidas",
+  "statsSummaryTimeSpent": "Tempo",
+  "statsSummaryAvgWpm": "WPM médio",
+  "statsSummaryBooksTouched": "Livros",
+  "statsChartWordsPerDay": "Palavras por dia",
+  "statsChartTimePerDay": "Tempo por dia",
+  "statsChartWpmTrend": "WPM ao longo do tempo",
+  "statsBookBreakdownTitle": "Por livro",
+  "statsBookBreakdownEntry": "{minutes} min • {sessions, plural, one{1 sessão} other{{sessions} sessões}}",
+  "@statsBookBreakdownEntry": {
+    "placeholders": {
+      "minutes": { "type": "int" },
+      "sessions": { "type": "int" }
+    }
+  },
+  "statsEmptyTitle": "Nada para mostrar ainda",
+  "statsEmptySubtitle": "Inicie uma sessão de leitura RSVP para ver estatísticas aqui.",
+  "statsDurationHoursMinutes": "{hours}h {minutes}m",
+  "@statsDurationHoursMinutes": {
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "statsDurationMinutes": "{minutes} min",
+  "@statsDurationMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "statsOtherBooks": "Outros",
+  "recapTitle": "Recap mensal",
+  "recapGenerateCta": "Compartilhar recap do mês",
+  "recapShareCta": "Compartilhar",
+  "recapEmptyMonth": "Nada lido neste mês ainda — volte depois de uma sessão RSVP.",
+  "recapFinished": "Finalizados",
+  "recapReading": "Em leitura",
+  "recapStatsFooter": "{words} palavras lidas • {hours}h {minutes}m",
+  "@recapStatsFooter": {
+    "placeholders": {
+      "words": { "type": "String" },
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "recapWordmark": "RSVP Reader",
+  "recapMonthHeadline": "{month} {year}",
+  "@recapMonthHeadline": {
+    "placeholders": {
+      "month": { "type": "String" },
+      "year": { "type": "int" }
+    }
+  },
+  "recapShareText": "Meu recap de leitura de {month} no RSVP Reader.",
+  "@recapShareText": {
+    "placeholders": {
+      "month": { "type": "String" }
+    }
+  },
+  "recapBookProgress": "{percent}% lido",
+  "@recapBookProgress": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  }
 }

@@ -3,11 +3,13 @@ import 'package:drift/drift.dart';
 import 'daos/books_dao.dart';
 import 'daos/cached_tokens_dao.dart';
 import 'daos/reading_progress_dao.dart';
+import 'daos/reading_session_dao.dart';
 import 'daos/sync_import_failures_dao.dart';
 import 'tables/book_source.dart';
 import 'tables/books_table.dart';
 import 'tables/cached_tokens_table.dart';
 import 'tables/reading_progress_table.dart';
+import 'tables/reading_session_table.dart';
 import 'tables/sync_import_failures_table.dart';
 
 part 'app_database.g.dart';
@@ -46,12 +48,14 @@ part 'app_database.g.dart';
   tables: [
     BooksTable,
     ReadingProgressTable,
+    ReadingSessionTable,
     CachedTokensTable,
     SyncImportFailuresTable,
   ],
   daos: [
     BooksDao,
     ReadingProgressDao,
+    ReadingSessionDao,
     CachedTokensDao,
     SyncImportFailuresDao,
   ],
@@ -60,7 +64,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +79,11 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(booksTable, booksTable.source);
             await m.addColumn(booksTable, booksTable.sourceUrl);
             await m.addColumn(booksTable, booksTable.siteName);
+          }
+          if (from < 5) {
+            await m.createTable(readingSessionTable);
+            await m.createIndex(readingSessionStartedAtIdx);
+            await m.createIndex(readingSessionBookIdIdx);
           }
         },
       );
