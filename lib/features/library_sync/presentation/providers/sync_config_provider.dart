@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/sync_config.dart';
 
 const _prefix = 'sync_';
-const _kFolderPath = '${_prefix}folderPath';
+const _kDriveFolderId = '${_prefix}driveFolderId';
 const _kSyncEpubs = '${_prefix}syncEpubs';
 const _kAutoSync = '${_prefix}autoSync';
 const _kDeviceId = '${_prefix}deviceId';
@@ -28,13 +28,15 @@ class SyncConfigNotifier extends StateNotifier<SyncConfig> {
       await _prefs.setString(_kDeviceId, deviceId);
     }
 
-    final folderPath = await _prefs.getString(_kFolderPath);
+    final driveFolderId = await _prefs.getString(_kDriveFolderId);
     final syncEpubs = await _prefs.getBool(_kSyncEpubs) ?? true;
     final autoSync = await _prefs.getBool(_kAutoSync) ?? true;
     final lastSyncedMs = await _prefs.getInt(_kLastSyncedAt);
 
     state = SyncConfig(
-      folderPath: (folderPath == null || folderPath.isEmpty) ? null : folderPath,
+      driveFolderId: (driveFolderId == null || driveFolderId.isEmpty)
+          ? null
+          : driveFolderId,
       syncEpubs: syncEpubs,
       autoSync: autoSync,
       deviceId: deviceId,
@@ -45,13 +47,13 @@ class SyncConfigNotifier extends StateNotifier<SyncConfig> {
     _loaded = true;
   }
 
-  Future<void> setFolderPath(String? path) async {
-    if (path == null || path.isEmpty) {
-      await _prefs.remove(_kFolderPath);
-      state = state.copyWith(clearFolderPath: true);
+  Future<void> setDriveFolderId(String? id) async {
+    if (id == null || id.isEmpty) {
+      await _prefs.remove(_kDriveFolderId);
+      state = state.copyWith(clearDriveFolderId: true);
     } else {
-      await _prefs.setString(_kFolderPath, path);
-      state = state.copyWith(folderPath: path);
+      await _prefs.setString(_kDriveFolderId, id);
+      state = state.copyWith(driveFolderId: id);
     }
   }
 

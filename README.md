@@ -52,6 +52,37 @@ flutter build apk --release       # release Android build
 flutter build ios --release       # release iOS build
 ```
 
+### Google Drive sync (optional)
+
+The app syncs library metadata, reading progress, and display settings through a
+`RSVP Reader/` folder it creates in your own Google Drive. The reading features
+all work without it — this is only if you want the sync button on the Settings
+screen to actually connect.
+
+Because Google OAuth ties the credentials to a specific Cloud project + Android
+signing key, if you clone this repo and try to sign in, you'll get
+`PlatformException(sign_in_failed, …ApiException: 10)` (DEVELOPER_ERROR). Fix by
+provisioning your own OAuth client:
+
+1. Create a project at https://console.cloud.google.com/ and enable the **Google
+   Drive API**.
+2. **OAuth consent screen** → External → Testing. Add yourself as a Test User.
+3. **Credentials → Create OAuth 2.0 Client ID → Android**:
+   - Package name: `com.pimenta.rsvp_reader` (or your fork's `applicationId`
+     from `android/app/build.gradle.kts`).
+   - SHA-1: your debug keystore fingerprint. Get it with:
+     ```bash
+     keytool -list -v -keystore ~/.android/debug.keystore \
+       -alias androiddebugkey -storepass android -keypass android | grep SHA1
+     ```
+4. Scope: `https://www.googleapis.com/auth/drive.file` (the app only sees files
+   it created). No client secret, no `google-services.json`, no manifest change
+   needed — `google_sign_in` resolves the OAuth client at runtime via Google
+   Play Services.
+
+Currently Android-only. The device/emulator must have Google Play Services
+(use a Play-image emulator, not AOSP).
+
 ## Architecture
 
 Feature-based **Clean Architecture** with Riverpod state management. Each feature owns its own `domain/`, `data/`, and `presentation/` folders.

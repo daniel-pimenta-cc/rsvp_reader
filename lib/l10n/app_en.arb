@@ -104,11 +104,16 @@
   "librarySectionNotStarted": "Not started",
   "librarySectionRead": "Read",
   "settingsSync": "Library sync",
-  "syncChooseFolder": "Choose sync folder",
-  "syncFolderLabel": "Folder",
-  "syncNoFolderSelected": "No folder selected",
+  "syncConnectDrive": "Connect Google Drive",
+  "syncConnectingDrive": "Connecting…",
+  "syncConnectedAs": "Connected as {email}",
+  "@syncConnectedAs": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
   "syncEpubFiles": "Sync EPUB files",
-  "syncEpubFilesDesc": "Copy EPUB files to the sync folder so they appear on other devices. Turn off to save cloud space.",
+  "syncEpubFilesDesc": "Copy EPUB files to Drive so they appear on other devices. Turn off to save cloud space.",
   "syncAutoSync": "Auto sync",
   "syncAutoSyncDesc": "Sync automatically when you open the app and when progress changes.",
   "syncNow": "Sync now",
@@ -126,7 +131,7 @@
       "error": { "type": "String" }
     }
   },
-  "syncDisconnect": "Disconnect folder",
+  "syncDisconnect": "Disconnect",
   "syncFailedImportsTitle": "{count, plural, one{1 file failed to import} other{{count} files failed to import}}",
   "@syncFailedImportsTitle": {
     "placeholders": {
@@ -143,5 +148,5 @@
       "fileName": { "type": "String" }
     }
   },
-  "syncHelp": "Pick a local folder on your device. The app saves your library there as JSON + EPUB files. To sync between devices, point a cloud sync app at that folder — for example, Autosync or FolderSync (Android) to mirror it with Google Drive / Dropbox / OneDrive / MEGA, or Syncthing to sync directly peer-to-peer between your own devices."
+  "syncHelp": "Your library metadata, reading progress and settings sync through a folder the app creates in your Google Drive (\"RSVP Reader\"). Sign in to connect an account; signing out on this device keeps the Drive files intact."
 }

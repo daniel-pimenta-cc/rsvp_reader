@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,23 +7,25 @@ import '../../../../database/app_database.dart';
 import '../../../epub_import/presentation/providers/epub_import_provider.dart';
 import '../../../rsvp_reader/domain/entities/display_settings.dart';
 import '../../../rsvp_reader/presentation/providers/display_settings_provider.dart';
-import '../../data/gateways/io_sync_folder_gateway.dart';
-import '../../data/gateways/saf_sync_folder_gateway.dart';
+import '../../data/gateways/drive_sync_folder_gateway.dart';
 import '../../data/services/library_sync_service.dart';
 import '../../domain/entities/sync_config.dart';
 import '../../domain/repositories/sync_folder_gateway.dart';
+import 'drive_auth_provider.dart';
 import 'sync_config_provider.dart';
 
+/// Single Drive-backed gateway. Takes a closure that returns a fresh
+/// authenticated client each operation so token refresh is handled by
+/// google_sign_in, not here.
+final driveSyncFolderGatewayProvider =
+    Provider<DriveSyncFolderGateway>((ref) {
+  return DriveSyncFolderGateway(() async {
+    return ref.read(driveAuthProvider.notifier).authenticatedClient();
+  });
+});
+
 final syncFolderGatewayProvider = Provider<SyncFolderGateway>((ref) {
-  // Android: use SAF so the user can pick folders from any cloud provider
-  // (Drive, Dropbox, OneDrive, …) via the system picker, and we get a
-  // persistable tree URI that works across app restarts.
-  // Other platforms: dart:io filesystem access. On iOS this works with the
-  // document picker's returned path; on desktop with any plain folder.
-  if (Platform.isAndroid) {
-    return SafSyncFolderGateway();
-  }
-  return const IoSyncFolderGateway();
+  return ref.watch(driveSyncFolderGatewayProvider);
 });
 
 final librarySyncServiceProvider = Provider<LibrarySyncService>((ref) {
@@ -113,6 +114,7 @@ class LibrarySyncNotifier extends StateNotifier<LibrarySyncState> {
   void schedulePush() {
     final config = _ref.read(syncConfigProvider);
     if (!config.isActive) return;
+    if (!_ref.read(driveAuthProvider).isSignedIn) return;
     _debounce?.cancel();
     _debounce = Timer(const Duration(seconds: 2), () {
       triggerSync();
@@ -124,6 +126,7 @@ class LibrarySyncNotifier extends StateNotifier<LibrarySyncState> {
   Future<void> triggerSync() async {
     final config = _ref.read(syncConfigProvider);
     if (!config.isConfigured) return;
+    if (!_ref.read(driveAuthProvider).isSignedIn) return;
 
     if (_running) {
       _queued = true;
@@ -186,6 +189,7 @@ class LibrarySyncNotifier extends StateNotifier<LibrarySyncState> {
   Future<void> pushDelete(String bookId) async {
     final config = _ref.read(syncConfigProvider);
     if (!config.isActive) return;
+    if (!_ref.read(driveAuthProvider).isSignedIn) return;
 
     if (_running) {
       _pendingDeletes.add(bookId);

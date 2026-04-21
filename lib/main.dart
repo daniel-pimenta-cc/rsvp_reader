@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'app.dart';
 import 'core/di/providers.dart';
 import 'database/app_database.dart';
+import 'features/library_sync/presentation/providers/drive_auth_provider.dart';
 import 'features/library_sync/presentation/providers/library_sync_provider.dart';
 import 'features/library_sync/presentation/providers/sync_config_provider.dart';
 import 'features/rsvp_reader/presentation/providers/display_settings_provider.dart';
@@ -54,6 +55,12 @@ Future<void> _initialSync(ProviderContainer container) async {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
   if (!container.read(syncConfigProvider).isActive) return;
+
+  // Restore the previous Google session silently; without a signed-in
+  // user the sync provider is a no-op and we'd just burn the startup.
+  final signedIn =
+      await container.read(driveAuthProvider.notifier).trySilentSignIn();
+  if (!signedIn) return;
 
   // Wait for local display settings to load before we snapshot them for the
   // push — otherwise the service would read the defaulted initial state

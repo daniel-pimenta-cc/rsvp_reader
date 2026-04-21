@@ -247,20 +247,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSync => 'Library sync';
 
   @override
-  String get syncChooseFolder => 'Choose sync folder';
+  String get syncConnectDrive => 'Connect Google Drive';
 
   @override
-  String get syncFolderLabel => 'Folder';
+  String get syncConnectingDrive => 'Connecting…';
 
   @override
-  String get syncNoFolderSelected => 'No folder selected';
+  String syncConnectedAs(String email) {
+    return 'Connected as $email';
+  }
 
   @override
   String get syncEpubFiles => 'Sync EPUB files';
 
   @override
   String get syncEpubFilesDesc =>
-      'Copy EPUB files to the sync folder so they appear on other devices. Turn off to save cloud space.';
+      'Copy EPUB files to Drive so they appear on other devices. Turn off to save cloud space.';
 
   @override
   String get syncAutoSync => 'Auto sync';
@@ -289,7 +291,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get syncDisconnect => 'Disconnect folder';
+  String get syncDisconnect => 'Disconnect';
 
   @override
   String syncFailedImportsTitle(int count) {
@@ -316,5 +318,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncHelp =>
-      'Pick a local folder on your device. The app saves your library there as JSON + EPUB files. To sync between devices, point a cloud sync app at that folder — for example, Autosync or FolderSync (Android) to mirror it with Google Drive / Dropbox / OneDrive / MEGA, or Syncthing to sync directly peer-to-peer between your own devices.';
+      'Your library metadata, reading progress and settings sync through a folder the app creates in your Google Drive (\"RSVP Reader\"). Sign in to connect an account; signing out on this device keeps the Drive files intact.';
 }

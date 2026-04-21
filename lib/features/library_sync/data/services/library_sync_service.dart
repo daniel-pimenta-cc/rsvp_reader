@@ -117,7 +117,7 @@ class LibrarySyncService {
     DateTime? localSettingsUpdatedAt,
     ImportProgressCallback? onImportProgress,
   }) async {
-    final folder = config.folderPath!;
+    final folder = config.driveFolderId!;
     if (!await _gateway.isReadable(folder)) {
       throw StateError('Sync folder is not readable: $folder');
     }
@@ -246,7 +246,7 @@ class LibrarySyncService {
           // New book from remote. Need the EPUB to populate tokens.
           if (config.syncEpubs) {
             await _importFromRemoteEpub(
-              folder: config.folderPath!,
+              folder: config.driveFolderId!,
               book: book,
             );
           } else {
@@ -562,7 +562,7 @@ class LibrarySyncService {
     required String bookId,
     required DateTime deletedAt,
   }) async {
-    final folder = config.folderPath!;
+    final folder = config.driveFolderId!;
     if (!await _gateway.isReadable(folder)) return;
 
     final raw = await _gateway.readText(folder, _kLibraryFile);

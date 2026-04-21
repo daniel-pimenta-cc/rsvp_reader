@@ -536,23 +536,23 @@ abstract class AppLocalizations {
   /// **'Library sync'**
   String get settingsSync;
 
-  /// No description provided for @syncChooseFolder.
+  /// No description provided for @syncConnectDrive.
   ///
   /// In en, this message translates to:
-  /// **'Choose sync folder'**
-  String get syncChooseFolder;
+  /// **'Connect Google Drive'**
+  String get syncConnectDrive;
 
-  /// No description provided for @syncFolderLabel.
+  /// No description provided for @syncConnectingDrive.
   ///
   /// In en, this message translates to:
-  /// **'Folder'**
-  String get syncFolderLabel;
+  /// **'Connecting…'**
+  String get syncConnectingDrive;
 
-  /// No description provided for @syncNoFolderSelected.
+  /// No description provided for @syncConnectedAs.
   ///
   /// In en, this message translates to:
-  /// **'No folder selected'**
-  String get syncNoFolderSelected;
+  /// **'Connected as {email}'**
+  String syncConnectedAs(String email);
 
   /// No description provided for @syncEpubFiles.
   ///
@@ -563,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncEpubFilesDesc.
   ///
   /// In en, this message translates to:
-  /// **'Copy EPUB files to the sync folder so they appear on other devices. Turn off to save cloud space.'**
+  /// **'Copy EPUB files to Drive so they appear on other devices. Turn off to save cloud space.'**
   String get syncEpubFilesDesc;
 
   /// No description provided for @syncAutoSync.
@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncDisconnect.
   ///
   /// In en, this message translates to:
-  /// **'Disconnect folder'**
+  /// **'Disconnect'**
   String get syncDisconnect;
 
   /// No description provided for @syncFailedImportsTitle.
@@ -641,7 +641,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncHelp.
   ///
   /// In en, this message translates to:
-  /// **'Pick a local folder on your device. The app saves your library there as JSON + EPUB files. To sync between devices, point a cloud sync app at that folder — for example, Autosync or FolderSync (Android) to mirror it with Google Drive / Dropbox / OneDrive / MEGA, or Syncthing to sync directly peer-to-peer between your own devices.'**
+  /// **'Your library metadata, reading progress and settings sync through a folder the app creates in your Google Drive (\"RSVP Reader\"). Sign in to connect an account; signing out on this device keeps the Drive files intact.'**
   String get syncHelp;
 }
 

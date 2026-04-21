@@ -247,20 +247,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsSync => 'Sincronização da biblioteca';
 
   @override
-  String get syncChooseFolder => 'Escolher pasta de sincronização';
+  String get syncConnectDrive => 'Conectar Google Drive';
 
   @override
-  String get syncFolderLabel => 'Pasta';
+  String get syncConnectingDrive => 'Conectando…';
 
   @override
-  String get syncNoFolderSelected => 'Nenhuma pasta selecionada';
+  String syncConnectedAs(String email) {
+    return 'Conectado como $email';
+  }
 
   @override
   String get syncEpubFiles => 'Sincronizar arquivos EPUB';
 
   @override
   String get syncEpubFilesDesc =>
-      'Copia os arquivos EPUB para a pasta de sincronização, fazendo com que apareçam em outros dispositivos. Desligue para economizar espaço na nuvem.';
+      'Copia os arquivos EPUB para o Drive, fazendo com que apareçam em outros dispositivos. Desligue para economizar espaço na nuvem.';
 
   @override
   String get syncAutoSync => 'Sincronização automática';
@@ -289,7 +291,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get syncDisconnect => 'Desconectar pasta';
+  String get syncDisconnect => 'Desconectar';
 
   @override
   String syncFailedImportsTitle(int count) {
@@ -316,5 +318,5 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get syncHelp =>
-      'Escolha uma pasta local no seu aparelho. O app salva sua biblioteca lá como arquivos JSON + EPUB. Pra sincronizar entre dispositivos, aponte um app de sincronização pra essa pasta — por exemplo Autosync ou FolderSync (Android) espelhando com Google Drive / Dropbox / OneDrive / MEGA, ou Syncthing pra sincronizar direto entre seus próprios dispositivos (peer-to-peer, sem nuvem no meio).';
+      'Os metadados da biblioteca, progresso de leitura e configurações sincronizam através de uma pasta que o app cria no seu Google Drive (\"RSVP Reader\"). Entre com uma conta para conectar; desconectar neste dispositivo não apaga os arquivos no Drive.';
 }

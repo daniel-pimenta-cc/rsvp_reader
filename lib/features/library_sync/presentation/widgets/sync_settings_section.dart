@@ -1,14 +1,11 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:saf_util/saf_util.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../rsvp_reader/domain/entities/display_settings.dart';
 import '../../../rsvp_reader/presentation/providers/display_settings_provider.dart';
+import '../providers/drive_auth_provider.dart';
 import '../providers/library_sync_provider.dart';
 import '../providers/sync_config_provider.dart';
 
@@ -21,6 +18,7 @@ class SyncSettingsSection extends ConsumerWidget {
     final settings = ref.watch(displaySettingsProvider);
     final config = ref.watch(syncConfigProvider);
     final syncState = ref.watch(librarySyncProvider);
+    final auth = ref.watch(driveAuthProvider);
 
     final textColor = settings.wordColor;
     final mutedColor = textColor.withAlpha(160);
@@ -43,10 +41,17 @@ class SyncSettingsSection extends ConsumerWidget {
           style: TextStyle(color: mutedColor, fontSize: 13, height: 1.4),
         ),
         const SizedBox(height: 12),
-        _FolderRow(settings: settings, l10n: l10n),
+        _DriveAccountRow(settings: settings, l10n: l10n),
+        if (auth.errorMessage != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            l10n.syncFailed(auth.errorMessage!),
+            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+          ),
+        ],
         const SizedBox(height: 8),
         _SyncStatusRow(settings: settings, l10n: l10n, state: syncState),
-        if (config.isConfigured) ...[
+        if (auth.isSignedIn && config.isConfigured) ...[
           const SizedBox(height: 8),
           _toggleTile(
             context: context,
@@ -67,46 +72,29 @@ class SyncSettingsSection extends ConsumerWidget {
                 ref.read(syncConfigProvider.notifier).setSyncEpubs(v),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: textColor,
-                    side: BorderSide(color: textColor.withAlpha(80)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onPressed: syncState.stage == SyncStage.syncing
-                      ? null
-                      : () => ref
-                          .read(librarySyncProvider.notifier)
-                          .triggerSync(),
-                  icon: syncState.stage == SyncStage.syncing
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: textColor,
-                          ),
-                        )
-                      : const Icon(Icons.sync, size: 18),
-                  label: Text(syncState.stage == SyncStage.syncing
-                      ? l10n.syncInProgress
-                      : l10n.syncNow),
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () async {
-                  await ref
-                      .read(syncConfigProvider.notifier)
-                      .setFolderPath(null);
-                },
-                style: TextButton.styleFrom(foregroundColor: mutedColor),
-                child: Text(l10n.syncDisconnect),
-              ),
-            ],
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: textColor,
+              side: BorderSide(color: textColor.withAlpha(80)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            onPressed: syncState.stage == SyncStage.syncing
+                ? null
+                : () =>
+                    ref.read(librarySyncProvider.notifier).triggerSync(),
+            icon: syncState.stage == SyncStage.syncing
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: textColor,
+                    ),
+                  )
+                : const Icon(Icons.sync, size: 18),
+            label: Text(syncState.stage == SyncStage.syncing
+                ? l10n.syncInProgress
+                : l10n.syncNow),
           ),
           _FailedImportsSection(settings: settings, l10n: l10n),
         ],
@@ -138,16 +126,17 @@ class SyncSettingsSection extends ConsumerWidget {
   }
 }
 
-class _FolderRow extends ConsumerWidget {
+class _DriveAccountRow extends ConsumerWidget {
   final DisplaySettings settings;
   final AppLocalizations l10n;
 
-  const _FolderRow({required this.settings, required this.l10n});
+  const _DriveAccountRow({required this.settings, required this.l10n});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(syncConfigProvider);
+    final auth = ref.watch(driveAuthProvider);
     final textColor = settings.wordColor;
+    final mutedColor = textColor.withAlpha(160);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -157,75 +146,68 @@ class _FolderRow extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.folder_outlined, color: textColor.withAlpha(180), size: 20),
+          Icon(
+            auth.isSignedIn
+                ? Icons.cloud_done_outlined
+                : Icons.cloud_off_outlined,
+            color: auth.isSignedIn ? settings.orpColor : mutedColor,
+            size: 22,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.syncFolderLabel,
-                  style: TextStyle(
-                    color: textColor.withAlpha(140),
-                    fontSize: 11,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _prettyPath(config.folderPath) ?? l10n.syncNoFolderSelected,
-                  style: TextStyle(color: textColor, fontSize: 13),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                ),
-              ],
+            child: Text(
+              auth.isSignedIn
+                  ? l10n.syncConnectedAs(auth.email ?? '')
+                  : (auth.isBusy
+                      ? l10n.syncConnectingDrive
+                      : l10n.syncConnectDrive),
+              style: TextStyle(color: textColor, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
-          TextButton(
-            onPressed: () => _pickFolder(context, ref),
-            style: TextButton.styleFrom(foregroundColor: settings.orpColor),
-            child: Text(l10n.syncChooseFolder),
-          ),
+          if (auth.isSignedIn)
+            TextButton(
+              onPressed: auth.isBusy
+                  ? null
+                  : () => _disconnect(context, ref),
+              style: TextButton.styleFrom(foregroundColor: mutedColor),
+              child: Text(l10n.syncDisconnect),
+            )
+          else
+            TextButton(
+              onPressed: auth.isBusy ? null : () => _connect(context, ref),
+              style: TextButton.styleFrom(foregroundColor: settings.orpColor),
+              child: Text(l10n.syncConnectDrive),
+            ),
         ],
       ),
     );
   }
 
-  String? _prettyPath(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    if (!raw.startsWith('content://')) return raw;
-    // SAF tree URI looks like:
-    //   content://<authority>/tree/primary%3ADocuments%2FRSVP
-    // Decode the last path segment so the user sees "primary:Documents/RSVP".
+  Future<void> _connect(BuildContext context, WidgetRef ref) async {
+    final ok = await ref.read(driveAuthProvider.notifier).signIn();
+    if (!ok) return;
+
+    // Resolve (or create) the app's root folder on Drive and persist its id.
     try {
-      final uri = Uri.parse(raw);
-      final last = uri.pathSegments.isEmpty ? raw : uri.pathSegments.last;
-      return Uri.decodeComponent(last);
-    } catch (_) {
-      return raw;
+      final gateway = ref.read(driveSyncFolderGatewayProvider);
+      final folderId = await gateway.ensureRootFolder();
+      await ref.read(syncConfigProvider.notifier).setDriveFolderId(folderId);
+    } catch (e) {
+      if (!context.mounted) return;
+      await ref.read(driveAuthProvider.notifier).signOut();
+      return;
     }
+
+    if (!context.mounted) return;
+    await ref.read(librarySyncProvider.notifier).triggerSync();
   }
 
-  Future<void> _pickFolder(BuildContext context, WidgetRef ref) async {
-    String? path;
-    if (Platform.isAndroid) {
-      // Use SAF so the user can pick folders from any installed storage
-      // provider (Google Drive, Dropbox, OneDrive, local storage) and we get
-      // a persistable URI we can write to across app restarts.
-      final doc = await SafUtil().pickDirectory(
-        writePermission: true,
-        persistablePermission: true,
-      );
-      path = doc?.uri;
-    } else {
-      path = await FilePicker.platform.getDirectoryPath();
-    }
-    if (path == null || path.isEmpty) return;
-    await ref.read(syncConfigProvider.notifier).setFolderPath(path);
-    // Kick off an initial sync right after picking.
-    if (context.mounted) {
-      await ref.read(librarySyncProvider.notifier).triggerSync();
-    }
+  Future<void> _disconnect(BuildContext context, WidgetRef ref) async {
+    await ref.read(driveAuthProvider.notifier).signOut();
+    await ref.read(syncConfigProvider.notifier).setDriveFolderId(null);
+    ref.read(driveSyncFolderGatewayProvider).clearCache();
   }
 }
 

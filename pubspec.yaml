@@ -48,13 +48,14 @@ dependencies:
   # File handling
   file_picker: ^9.2.1
 
-  # Storage Access Framework (Android). Lets the user pick a folder from any
-  # provider installed on their device (Google Drive, Dropbox, OneDrive, local
-  # storage, …) and gives us a persistable tree URI we can read/write across
-  # app restarts. dart:io can't write to these content:// URIs, so we need
-  # these plugins instead.
-  saf_util: ^2.0.0
-  saf_stream: ^2.0.0
+  # Google Drive sync. google_sign_in handles the OAuth flow (credentials are
+  # provisioned in Google Cloud Console with the app's package name + SHA-1);
+  # googleapis gives us the Drive v3 REST client; the extension bridges
+  # GoogleSignIn tokens into an http.Client the googleapis consumes.
+  google_sign_in: ^6.2.2
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
 
   # UI
   google_fonts: ^6.2.1
