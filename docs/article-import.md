@@ -132,9 +132,9 @@ de `author`.
 ## Sync
 
 `LibrarySyncService` filtra `source='epub'` em `_buildLocalSnapshot` —
-artigos nao participam do sync folder. Motivos:
+artigos nao participam do sync via Google Drive. Motivos:
 - Nao ha arquivo de artigo no disco para subir.
-- O manifesto `library.json` e formato EPUB.
+- O manifesto `library.json` descreve metadata de livros EPUB.
 - Artigos sao leituras curtas, sincroniza-los traz pouco beneficio.
 
 Se no futuro virar desejavel, seria preciso estender o schema do
@@ -152,7 +152,7 @@ em [share-extension-ios.md](share-extension-ios.md).
 | Origem              | Entry point                             | Plataforma |
 |---------------------|------------------------------------------|------------|
 | File picker EPUB    | FAB na tab Books                         | todas      |
-| Sync folder         | Auto-import em `LibrarySyncService`      | todas      |
+| Google Drive sync   | Auto-import em `LibrarySyncService`      | Android    |
 | URL dialog          | FAB na tab Articles                      | todas      |
 | Share sheet         | `ShareIntentHandler` via intent-filter   | Android    |
 | Share extension     | `ShareIntentHandler` via app group       | iOS (TODO) |

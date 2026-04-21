@@ -54,7 +54,7 @@ Pipeline: EPUB bytes → `epub_pro` → capitulos → `HtmlStripper` → `TextTo
 Pipeline: URL → `http.get` → HTML → `ReadabilityExtractor` → `HtmlStripper` → `TextTokenizer` → `ParsedBook` (1 capitulo) → `persistParsedBook(source: BookSource.article)`. Detalhes em [article-import.md](article-import.md).
 
 ### library_sync
-Sincroniza a biblioteca para pasta escolhida pelo usuario (SAF no Android). **Filtra `source='epub'`** — artigos sao sempre locais.
+Sincroniza metadata da biblioteca, `reading_progress` e `DisplaySettings` atraves de uma pasta "RSVP Reader" criada pelo app no Google Drive do usuario (scope `drive.file` — so enxerga arquivos que o app criou). Backend unico via `DriveSyncFolderGateway` (implementa `SyncFolderGateway`); `DriveAuthNotifier` cuida de sign-in/sign-out e de gerar o `http.Client` autenticado. `SyncConfig.driveFolderId` cacheia o id da pasta root. **Filtra `source='epub'`** — artigos sao sempre locais. Android-only.
 
 ### rsvp_reader
 Feature central. Widgets organizados em arquivos focados:
@@ -118,6 +118,8 @@ Providers principais:
 - `categorizedLibraryProvider(LibraryKind)` — FutureProvider.family que filtra e agrupa por progresso
 - `epubImportProvider`, `articleImportProvider` — StateNotifiers para fluxos de import
 - `librarySyncProvider` — StateNotifier orquestrando push/pull/auto-import
+- `driveAuthProvider` — StateNotifier do sign-in do Google Drive (email conectado, busy, erro)
+- `driveSyncFolderGatewayProvider` — `DriveSyncFolderGateway` com fabrica de `http.Client` autenticado
 
 ## Database (Drift/SQLite)
 
@@ -125,7 +127,7 @@ Schema version **4**. Tabelas:
 - `BooksTable` — metadata: id, title, author, filePath, coverImage, totalWords, chapterCount, importedAt, lastReadAt, syncFileName, **source** (BookSource.epub|article), **sourceUrl**, **siteName**.
 - `ReadingProgressTable` — posicao por livro (bookId PK, chapterIndex, wordIndex, wpm, updatedAt).
 - `CachedTokensTable` — tokens pre-processados por capitulo (bookId, chapterIndex, chapterTitle, tokensJson, wordCount, paragraphCount).
-- `SyncImportFailuresTable` — EPUBs que falharam ao ser auto-importados do sync folder.
+- `SyncImportFailuresTable` — EPUBs do Drive que falharam ao ser auto-importados.
 
 `BookSource` (`lib/database/tables/book_source.dart`) sao constantes de string (nao enum Dart).
 
@@ -140,7 +142,7 @@ Share sheet:    Android intent → ShareIntentHandler → ArticleImportNotifier 
 Leitura:        SQLite cache → Chapter[] → RsvpEngine (Ticker) → RsvpWordDisplay / ContextScrollView
 Config:         SharedPreferences ↔ DisplaySettingsNotifier ↔ RsvpEngine.displaySettings
 Theme:          ThemeModeNotifier ↔ DisplaySettingsNotifier.applyBrightness() → reader palette swap
-Sync (EPUB):    SQLite (source=epub) ↔ library.json manifest + books/ na pasta escolhida
+Sync (EPUB):    SQLite (source=epub) ↔ library.json manifest + books/ em RSVP Reader/ no Drive
 ```
 
 ## i18n

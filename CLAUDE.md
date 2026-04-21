@@ -17,7 +17,7 @@ flutter run                                        # rodar no device/emulador
 
 Feature-based Clean Architecture com Riverpod. Ver [docs/architecture.md](docs/architecture.md).
 
-**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent | google_fonts (Lora + Inter)
+**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent | google_sign_in + googleapis (Drive v3) | google_fonts (Lora + Inter)
 
 ## Estrutura de pastas
 
@@ -55,7 +55,8 @@ lib/
       data/         book_persistence (persistParsedBook)
     epub_import/     # parsing EPUB -> WordToken, cache de tokens no DB
     article_import/  # fetch URL -> readability -> WordToken, cache de tokens no DB
-    library_sync/    # sync de biblioteca (EPUB) para pasta escolhida pelo usuario
+    library_sync/    # sync de biblioteca (EPUB) + progresso + settings via Google Drive
+                     # (drive.file scope, pasta "RSVP Reader" no Drive do usuario)
     rsvp_reader/
       domain/entities/  rsvp_state, display_settings, word_token, chapter
       presentation/
@@ -81,7 +82,7 @@ lib/
 - **WordToken**: unidade fundamental — cada palavra pre-processada com ORP index e timing multiplier no momento do import. O motor RSVP nao faz nenhum calculo no hot loop.
 - **ORP (Optimal Recognition Point)**: letra de foco a ~30% da palavra, destacada em cor accent. Ver [docs/rsvp-engine.md](docs/rsvp-engine.md).
 - **Duas fontes de conteudo, uma pipeline** (`BookSource`):
-  - `epub`: arquivo EPUB importado (file picker ou sync folder).
+  - `epub`: arquivo EPUB importado (file picker ou Drive sync).
   - `article`: artigo web importado por URL (dialog manual ou share sheet).
   - Ambos viram `ParsedBook` -> `persistParsedBook` -> `books` + `cached_tokens`. Leitura, progresso e engine RSVP sao identicos. Ver [docs/article-import.md](docs/article-import.md).
 - **Tres modos de leitura** (`ReaderMode`):
@@ -108,6 +109,7 @@ lib/
 - **Comparar `source`**: usar as constantes de `BookSource` (`lib/database/tables/book_source.dart`), nunca literais `'epub'`/`'article'`.
 - **URLs**: usar `UrlUtils.extractHttpUrl` / `parseWithHttpsFallback` em `lib/core/utils/url_utils.dart` — nao reimplementar parsing ad-hoc.
 - **Font mapping**: usar `mapFontFamily()` de `lib/core/utils/font_mapper.dart` — nao reimplementar switch de nomes em cada widget.
+- **Sync via Google Drive**: `DriveSyncFolderGateway` implementa `SyncFolderGateway` usando googleapis com scope `drive.file` (so enxerga arquivos que o proprio app criou). Auth via `google_sign_in` em `DriveAuthNotifier` — silent sign-in no startup, connect explicito em Settings. Root folder "RSVP Reader" criada sob demanda; id cacheado em `SyncConfig.driveFolderId`. Android-only.
 - **Sync de biblioteca so inclui EPUB**: `LibrarySyncService` filtra `source=='epub'`. Artigos sao sempre locais.
 - Testes unitarios dos core utils sao prioridade (ORP, timing, tokenizer, HTML stripper, readability). HTML stripper deve cobrir tags `_skipTags` para evitar regressao de CSS/JS vazando no texto.
 - **Arquivos pequenos**: widgets extraidos em arquivos focados (1 responsabilidade). Controles do reader: `rsvp_controls.dart` compoe; subwidgets em `controls_*.dart` + `seek_slider.dart`. Biblioteca: `library_screen.dart` compoe; subwidgets em `library_*.dart`.
