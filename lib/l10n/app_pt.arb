@@ -219,5 +219,12 @@
     "placeholders": {
       "title": { "type": "String" }
     }
+  },
+  "completionIncludeStats": "Incluir estatísticas na imagem",
+  "completionFinishedOn": "Finalizado em {date}",
+  "@completionFinishedOn": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
   }
 }

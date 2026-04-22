@@ -883,6 +883,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I just finished \"{title}\" on RSVP Reader.'**
   String completionShareText(String title);
+
+  /// No description provided for @completionIncludeStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Include stats in image'**
+  String get completionIncludeStats;
+
+  /// No description provided for @completionFinishedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished {date}'**
+  String completionFinishedOn(String date);
 }
 
 class _AppLocalizationsDelegate

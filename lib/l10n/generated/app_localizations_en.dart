@@ -479,4 +479,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String completionShareText(String title) {
     return 'I just finished \"$title\" on RSVP Reader.';
   }
+
+  @override
+  String get completionIncludeStats => 'Include stats in image';
+
+  @override
+  String completionFinishedOn(String date) {
+    return 'Finished $date';
+  }
 }

@@ -240,11 +240,17 @@
       "sessions": { "type": "int" }
     }
   },
-  "completionShareText": "I just finished \"{title}\" on RSVP Reader."
-  ,
+  "completionShareText": "I just finished \"{title}\" on RSVP Reader.",
   "@completionShareText": {
     "placeholders": {
       "title": { "type": "String" }
+    }
+  },
+  "completionIncludeStats": "Include stats in image",
+  "completionFinishedOn": "Finished {date}",
+  "@completionFinishedOn": {
+    "placeholders": {
+      "date": { "type": "String" }
     }
   }
 }

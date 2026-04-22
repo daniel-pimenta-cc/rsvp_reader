@@ -24,6 +24,7 @@ class _BookCompletionScreenState extends ConsumerState<BookCompletionScreen> {
   final GlobalKey _boundaryKey = GlobalKey();
   final _exportService = ImageExportService();
   bool _sharing = false;
+  bool _includeStats = true;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +41,8 @@ class _BookCompletionScreenState extends ConsumerState<BookCompletionScreen> {
           summary: summary,
           boundaryKey: _boundaryKey,
           sharing: _sharing,
+          includeStats: _includeStats,
+          onIncludeStatsChanged: (v) => setState(() => _includeStats = v),
           onRatingChanged: (value) => _onRatingChanged(summary, value),
           onShare: () => _onShare(summary),
         ),
@@ -76,6 +79,8 @@ class _CompletionBody extends StatelessWidget {
   final BookCompletionSummary summary;
   final GlobalKey boundaryKey;
   final bool sharing;
+  final bool includeStats;
+  final ValueChanged<bool> onIncludeStatsChanged;
   final ValueChanged<int?> onRatingChanged;
   final VoidCallback onShare;
 
@@ -83,6 +88,8 @@ class _CompletionBody extends StatelessWidget {
     required this.summary,
     required this.boundaryKey,
     required this.sharing,
+    required this.includeStats,
+    required this.onIncludeStatsChanged,
     required this.onRatingChanged,
     required this.onShare,
   });
@@ -108,7 +115,10 @@ class _CompletionBody extends StatelessWidget {
                 fit: BoxFit.contain,
                 child: RepaintBoundary(
                   key: boundaryKey,
-                  child: BookCompletionCard(summary: summary),
+                  child: BookCompletionCard(
+                    summary: summary,
+                    showStats: includeStats,
+                  ),
                 ),
               ),
             ),
@@ -133,7 +143,14 @@ class _CompletionBody extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.base),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.completionIncludeStats),
+              value: includeStats,
+              onChanged: onIncludeStatsChanged,
+            ),
+            const SizedBox(height: AppSpacing.sm),
             FilledButton.icon(
               onPressed: sharing ? null : onShare,
               icon: const Icon(Icons.ios_share),
