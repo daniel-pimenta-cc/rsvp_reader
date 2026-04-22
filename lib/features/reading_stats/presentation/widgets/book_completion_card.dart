@@ -60,7 +60,8 @@ class BookCompletionCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Center(
                   child: SizedBox(
-                    width: 180,
+                    // Minimal layout (no stats) can afford a larger hero cover.
+                    width: showStats ? 220 : 260,
                     child: AspectRatio(
                       aspectRatio: 2 / 3,
                       child: _Cover(summary: summary),
@@ -71,7 +72,7 @@ class BookCompletionCard extends StatelessWidget {
                 Text(
                   summary.title,
                   textAlign: TextAlign.center,
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.lora(
                     fontSize: 22,
