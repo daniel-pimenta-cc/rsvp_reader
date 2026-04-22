@@ -95,6 +95,15 @@ Feature central. Widgets organizados em arquivos focados:
 ### settings
 Tela full-screen: secao Appearance (`SegmentedButton<ThemeMode>`) + `DisplaySettingsPanel()` + `SyncSettingsSection` + About. Background e cores vem de `DisplaySettings` (preview ao vivo), exceto Appearance que usa theme global.
 
+### reading_stats
+Telemetria local + tres surfaces de apresentacao:
+
+- **`ReadingStatsScreen` (`/stats`)** — TabBar Weekly (7d) / Monthly (30d). Cards de summary, stacked bar "words per day" (cor por livro), bar "time per day", line "wpm trend" (fl_chart). Book breakdown ordenado por tempo. Layout 2-col em tablet landscape.
+- **`MonthlyRecapScreen` (`/stats/recap`)** — preview do `MonthlyRecapCard` 9:16 + botao Share. Card com secao "Finalizados" destacada + "Em leitura" abaixo, rodape com totais.
+- **`BookCompletionScreen` (`/books/:id/completion`)** — disparada automaticamente pelo reader ao chegar no fim de um livro (via `RsvpState.finishTicket`). Star picker 0-5 (persiste em `books.rating`), bloco de stats detalhadas, toggle "Incluir stats na imagem", `BookCompletionCard` 9:16 compartilhavel.
+
+Agregacoes puras (`buildSnapshot`, `buildMonthlyRecap`, `buildCompletionSummary`) ficam nos providers junto com o `StreamProvider.family` / `FutureProvider.family`. **Share cards usam paleta fixa (independente de tema)** pra consistencia do PNG exportado. Detalhes em [reading-stats.md](reading-stats.md).
+
 ## Share sheet e integracao top-level
 
 Dois componentes vivem acima de `MaterialApp.router` em `lib/app.dart`:
@@ -108,8 +117,8 @@ Dois componentes vivem acima de `MaterialApp.router` em `lib/app.dart`:
 
 Providers principais:
 - `appDatabaseProvider` — instancia do Drift DB, overridden no main
-- `booksDaoProvider`, `readingProgressDaoProvider`, `cachedTokensDaoProvider`, `syncImportFailuresDaoProvider` — DAOs
-- `rsvpEngineProvider(bookId)` — StateNotifierProvider.family, motor RSVP por livro
+- `booksDaoProvider`, `readingProgressDaoProvider`, `readingSessionDaoProvider`, `cachedTokensDaoProvider`, `syncImportFailuresDaoProvider` — DAOs
+- `rsvpEngineProvider(bookId)` — StateNotifierProvider.family, motor RSVP por livro. Grava `reading_session` row em cada flush e emite `finishTicket` incrementado no fim-do-livro organico.
 - `displaySettingsProvider` — DisplaySettings persistidas via SharedPreferences
 - `themeModeProvider` — ThemeMode (system/light/dark) persistido, inverte cores do reader ao trocar brightness
 - `selectedBookIdProvider` — StateProvider<String?> para master-detail em tablet landscape
@@ -120,16 +129,22 @@ Providers principais:
 - `librarySyncProvider` — StateNotifier orquestrando push/pull/auto-import
 - `driveAuthProvider` — StateNotifier do sign-in do Google Drive (email conectado, busy, erro)
 - `driveSyncFolderGatewayProvider` — `DriveSyncFolderGateway` com fabrica de `http.Client` autenticado
+- `statsSnapshotProvider(StatsRange)` — StreamProvider.family que agrega sessions por dia/livro
+- `monthlyRecapProvider(RecapMonth)` — FutureProvider.family que classifica livros em finished/reading no mes
+- `bookCompletionProvider(bookId)` — StreamProvider.family com stats agregadas do livro (tempo, palavras, sessoes, avgWpm, rating)
 
 ## Database (Drift/SQLite)
 
-Schema version **4**. Tabelas:
-- `BooksTable` — metadata: id, title, author, filePath, coverImage, totalWords, chapterCount, importedAt, lastReadAt, syncFileName, **source** (BookSource.epub|article), **sourceUrl**, **siteName**.
+Schema version **6**. Tabelas:
+- `BooksTable` — metadata: id, title, author, filePath, coverImage, totalWords, chapterCount, importedAt, lastReadAt, syncFileName, **source** (BookSource.epub|article), **sourceUrl**, **siteName**, **rating** (nullable int 0-5, v6).
 - `ReadingProgressTable` — posicao por livro (bookId PK, chapterIndex, wordIndex, wpm, updatedAt).
+- `ReadingSessionTable` (v5) — uma row por trecho continuo de `isPlaying=true`. Campos: id, bookId, startedAt, endedAt, durationMs, wordsRead, startWordIndex, endWordIndex, avgWpm. Sem FK em `bookId` (historico sobrevive a delete). Indices em `startedAt` e `bookId`.
 - `CachedTokensTable` — tokens pre-processados por capitulo (bookId, chapterIndex, chapterTitle, tokensJson, wordCount, paragraphCount).
 - `SyncImportFailuresTable` — EPUBs do Drive que falharam ao ser auto-importados.
 
 `BookSource` (`lib/database/tables/book_source.dart`) sao constantes de string (nao enum Dart).
+
+**Migracoes**: cada bump incrementa `schemaVersion` e adiciona um bloco `if (from < N)` na `MigrationStrategy`. Os bumps foram: v2 syncFileName em books, v3 sync_import_failures table, v4 article source fields em books, v5 reading_session + indices, v6 rating em books.
 
 ## Fluxo de dados
 
@@ -143,6 +158,20 @@ Leitura:        SQLite cache → Chapter[] → RsvpEngine (Ticker) → RsvpWordD
 Config:         SharedPreferences ↔ DisplaySettingsNotifier ↔ RsvpEngine.displaySettings
 Theme:          ThemeModeNotifier ↔ DisplaySettingsNotifier.applyBrightness() → reader palette swap
 Sync (EPUB):    SQLite (source=epub) ↔ library.json manifest + books/ em RSVP Reader/ no Drive
+Telemetria:     RsvpEngine._flushSession() em pause/end/ereader/dispose → reading_session row
+Stats:          reading_session[] → buildSnapshot / buildMonthlyRecap / buildCompletionSummary → UI + PNG
+Completion:     engine end-of-book (_advanceWord) → finishTicket++ → ref.listen → context.push(/completion)
+```
+
+## Rotas (go_router)
+
+```
+/                          LibraryScreen (com icone stats no AppBar)
+/reader/:bookId            RsvpReaderScreen (fullscreenDialog)
+/settings                  SettingsScreen
+/stats                     ReadingStatsScreen (TabBar weekly/monthly)
+/stats/recap               MonthlyRecapScreen (recap do mes corrente)
+/books/:bookId/completion  BookCompletionScreen (star rating + share card)
 ```
 
 ## i18n

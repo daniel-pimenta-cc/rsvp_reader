@@ -16,6 +16,9 @@ Words are displayed one at a time at a configurable WPM, with the **Optimal Reco
 - **Velocity-based scroll tracking** — slow scroll moves word-by-word, faster scroll steps by sentence or paragraph
 - **Configurable focus line** below the word (plain anchor or progress-bar style)
 - **Fully customizable theme** — colors, fonts (Google Fonts), sizes, and layout positions, with live preview
+- **Reading stats** — local per-session telemetry feeds a weekly/monthly dashboard (fl_chart) with words-per-day, time, and WPM trend charts
+- **Shareable monthly recap** — last.fm-style 9:16 image with finished + in-progress books, exported as PNG via share sheet
+- **Book completion celebration** — automatic recap on the last word of a book with time/words/sessions/WPM stats, a 0-5 star rating, and an optional shareable card
 - **Bilingual UI** — English and Brazilian Portuguese (PT-BR)
 - **Offline-first** — books and progress stored locally in SQLite via Drift
 - **Unicode-aware ORP calculation** — handles Portuguese accents and punctuation correctly
@@ -101,7 +104,7 @@ lib/
 
 **Key concept — `WordToken`:** every word of every book is pre-processed at import time with its ORP index and timing multiplier already calculated. The RSVP engine does *no* computation inside the per-word tick, keeping playback smooth at 600+ WPM.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/rsvp-engine.md](docs/rsvp-engine.md) for detailed documentation on the data flow, state management, ORP math, smart timing multipliers, ramp-up, and velocity-based scroll stepping.
+See [docs/architecture.md](docs/architecture.md) and [docs/rsvp-engine.md](docs/rsvp-engine.md) for detailed documentation on the data flow, state management, ORP math, smart timing multipliers, ramp-up, and velocity-based scroll stepping. [docs/reading-stats.md](docs/reading-stats.md) covers the reading-session model, stats dashboard, and the monthly recap + completion share pipelines.
 
 ## Tech stack
 

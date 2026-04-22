@@ -23,4 +23,9 @@
 - [x] Share sheet Android (intent-filter + `receive_sharing_intent`, coordinator global de navegação/snackbar em `app.dart`)
 - [ ] Share sheet iOS — Xcode target precisa ser criado num Mac, passos em [docs/share-extension-ios.md](docs/share-extension-ios.md)
 - [x] Tablet layout pass (landscape liberado, grid adaptativo 2/3/4, master-detail em tablet landscape)
+- [x] Reading stats: sessões de leitura (tabela `reading_session` v5) + dashboard `/stats` com charts weekly/monthly (fl_chart)
+- [x] Monthly recap: imagem 9:16 compartilhável do mês com livros finalizados + em leitura, gerada via `RepaintBoundary -> PNG -> share_plus`
+- [x] Book completion: tela disparada no fim do livro com stats detalhadas, rating 0-5 estrelas (coluna `books.rating` v6), card 9:16 compartilhável com toggle "incluir stats"
+- [ ] Entry point na biblioteca para reabrir a tela de completion de livros já terminados (hoje só auto-trigger + URL direta)
+- [ ] Yearly recap — reutilizar pipeline do monthly com layout diferente
 - [ ] Triagem de issues do GitHub

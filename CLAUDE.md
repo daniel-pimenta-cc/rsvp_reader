@@ -17,7 +17,7 @@ flutter run                                        # rodar no device/emulador
 
 Feature-based Clean Architecture com Riverpod. Ver [docs/architecture.md](docs/architecture.md).
 
-**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent | google_sign_in + googleapis (Drive v3) | google_fonts (Lora + Inter)
+**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent | google_sign_in + googleapis (Drive v3) | google_fonts (Lora + Inter) | fl_chart (stats) | share_plus (export PNG) | intl (DateFormat)
 
 ## Estrutura de pastas
 
@@ -39,11 +39,13 @@ lib/
     constants/    # app_constants, responsive_defaults (font scale + margins por device)
     widgets/      # section_card, skeleton_loader (shimmer com AnimationController compartilhado)
     utils/        # orp_calculator, word_timing, html_stripper, text_tokenizer,
-                  # readability_extractor, url_utils, sync_file_name, font_mapper
+                  # readability_extractor, url_utils, sync_file_name, font_mapper,
+                  # image_export_service (RepaintBoundary -> PNG -> share_plus)
     di/           # provider overrides (appDatabaseProvider etc.)
     share/        # share_intent_handler (Android share target)
   database/       # Drift: app_database, tables/ (books, reading_progress,
-                  # cached_tokens, sync_import_failures, book_source constants), daos/
+                  # reading_session, cached_tokens, sync_import_failures,
+                  # book_source constants), daos/
   features/
     book_library/
       presentation/
@@ -58,9 +60,10 @@ lib/
     library_sync/    # sync de biblioteca (EPUB) + progresso + settings via Google Drive
                      # (drive.file scope, pasta "RSVP Reader" no Drive do usuario)
     rsvp_reader/
-      domain/entities/  rsvp_state, display_settings, word_token, chapter
+      domain/entities/  rsvp_state (inclui finishTicket), display_settings, word_token, chapter
       presentation/
-        screens/    rsvp_reader_screen (modes, top bar, side panel host)
+        screens/    rsvp_reader_screen (modes, top bar, side panel host,
+                    ref.listen em finishTicket -> /books/:id/completion)
         widgets/    rsvp_word_display, context_scroll_view,
                     rsvp_controls (dock compositor),
                     controls_shell, controls_meta_row, controls_progress_row,
@@ -68,8 +71,18 @@ lib/
                     wpm_selector (capsule + preset drawer compartilhado),
                     display_settings_panel + display_settings_widgets (part),
                     reader_settings_sheet, chapter_list_sheet, reader_side_panel
-        providers/  rsvp_engine_provider, display_settings_provider,
-                    reader_side_panel_provider
+        providers/  rsvp_engine_provider (flush de sessao em pause/end/ereader/dispose),
+                    display_settings_provider, reader_side_panel_provider
+    reading_stats/   # telemetria + dashboards + shareable cards
+      domain/entities/  stats_range, stats_snapshot, monthly_recap, book_completion_summary
+      presentation/
+        screens/    reading_stats_screen (TabBar weekly/monthly),
+                    monthly_recap_screen, book_completion_screen
+        widgets/    stats_* (summary_cards, color_palette, book_breakdown,
+                    *_chart, empty_state), monthly_recap_card,
+                    book_completion_card, star_rating_picker
+        providers/  reading_stats_provider (statsSnapshotProvider),
+                    monthly_recap_provider, book_completion_provider
     settings/
       presentation/
         screens/    settings_screen (Appearance + DisplaySettingsPanel + Sync + About)
@@ -96,6 +109,8 @@ lib/
 - **Responsivo + master-detail**: breakpoints em `responsive.dart` (compact <600 / medium 600-840 / expanded >840). Grid adaptativo 2/3/4 colunas. Em tablet landscape, `LibraryScreen` renderiza split-view: lista a esquerda (440px) + reader/placeholder a direita — `selectedBookIdProvider` controla qual livro esta aberto sem trocar rota. Settings e chapter list do reader viram painel lateral (`ReaderSidePanel` + `readerSidePanelProvider`) em tablet landscape; bottom sheet em mobile/portrait. Context scroll view limita largura a 720px em telas largas (readable line-length editorial).
 - **WPM selector compartilhado**: `WpmSelector` (all-in-one) usado em settings; `WpmCapsule` + `WpmPresetRow` usados separadamente nos controles. Preset drawer gera valores dinamicamente (atual ± incrementos de 50, clamped min/max), auto-centraliza o chip selecionado no scroll. Capsule com +/- faz ajuste fino de 25.
 - **Biblioteca com tabs**: `LibraryScreen` separa "Livros" (source=epub) de "Artigos" (source=article) via `TabBar`. O FAB (`LibraryFab`) muda de acao conforme a tab ativa.
+- **Reading sessions**: cada trecho continuo de `isPlaying=true` (play -> pause/end/ereader/dispose) vira uma row em `reading_session`. Seeks durante play nao quebram a sessao. Threshold 3s/5 words descarta taps acidentais. Ver [docs/reading-stats.md](docs/reading-stats.md).
+- **Stats + recap + completion**: feature `reading_stats` consome sessions para (a) dashboard `/stats` com charts weekly/monthly (fl_chart), (b) recap mensal `/stats/recap` com PNG compartilhavel, (c) tela de conclusao `/books/:id/completion` disparada automaticamente ao chegar no final de um livro (via `RsvpState.finishTicket`). Rating 0-5 estrelas persiste em `books.rating`. Share cards usam paleta fixa (independente de tema) e capturam via `RepaintBoundary -> toImage -> share_plus`.
 
 ## Regras
 
@@ -111,7 +126,9 @@ lib/
 - **Font mapping**: usar `mapFontFamily()` de `lib/core/utils/font_mapper.dart` — nao reimplementar switch de nomes em cada widget.
 - **Sync via Google Drive**: `DriveSyncFolderGateway` implementa `SyncFolderGateway` usando googleapis com scope `drive.file` (so enxerga arquivos que o proprio app criou). Auth via `google_sign_in` em `DriveAuthNotifier` — silent sign-in no startup, connect explicito em Settings. Root folder "RSVP Reader" criada sob demanda; id cacheado em `SyncConfig.driveFolderId`. Android-only.
 - **Sync de biblioteca so inclui EPUB**: `LibrarySyncService` filtra `source=='epub'`. Artigos sao sempre locais.
-- Testes unitarios dos core utils sao prioridade (ORP, timing, tokenizer, HTML stripper, readability). HTML stripper deve cobrir tags `_skipTags` para evitar regressao de CSS/JS vazando no texto.
+- Testes unitarios dos core utils sao prioridade (ORP, timing, tokenizer, HTML stripper, readability). HTML stripper deve cobrir tags `_skipTags` para evitar regressao de CSS/JS vazando no texto. Logica pura de stats tambem (`computeSessionAvgWpm`, `buildSnapshot`, `buildMonthlyRecap`, `buildCompletionSummary`).
+- **Share cards (recap, completion)**: paleta fixa (`_paper`, `_ink`, `_accent` etc. hardcoded nos widgets), NAO derivada de `Theme.of(context)` — exportacao deve ser consistente entre usuarios. Fonts via `GoogleFonts.inter()` / `GoogleFonts.lora()` (strings `'Inter'`/`'Lora'` nao sao asset families registrados).
+- **Engine e finishTicket**: qualquer ponto novo de saida de `isPlaying=true` (alem de pause/end/ereader/dispose) deve chamar `_flushSession()` antes de zerar contadores. Fim-de-livro organico (`_advanceWord` hit end, nao seek) incrementa `state.finishTicket` para disparar a tela de completion.
 - **Arquivos pequenos**: widgets extraidos em arquivos focados (1 responsabilidade). Controles do reader: `rsvp_controls.dart` compoe; subwidgets em `controls_*.dart` + `seek_slider.dart`. Biblioteca: `library_screen.dart` compoe; subwidgets em `library_*.dart`.
 
 ## Docs detalhados
@@ -119,5 +136,6 @@ lib/
 - [docs/architecture.md](docs/architecture.md) — arquitetura, fluxo de dados, providers
 - [docs/rsvp-engine.md](docs/rsvp-engine.md) — motor RSVP, ORP, timing, ramp-up
 - [docs/article-import.md](docs/article-import.md) — pipeline de artigos web, readability, share sheet
+- [docs/reading-stats.md](docs/reading-stats.md) — sessions, stats dashboard, monthly recap, book completion, pipeline de export de PNG
 - [docs/share-extension-ios.md](docs/share-extension-ios.md) — setup do share extension iOS (Xcode)
 - [tasks.md](tasks.md) — bugs e features pendentes
