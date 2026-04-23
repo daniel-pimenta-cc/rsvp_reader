@@ -36,8 +36,15 @@ class BooksDao extends DatabaseAccessor<AppDatabase> with _$BooksDaoMixin {
   }
 
   Future<void> updateLastReadAt(String bookId) {
+    return setLastReadAt(bookId, DateTime.now());
+  }
+
+  /// Sets `lastReadAt` to a specific value. Used by sync when applying a
+  /// remote timestamp — [updateLastReadAt] would stamp the sync time here,
+  /// which shuffles already-read books to the top of the list.
+  Future<void> setLastReadAt(String bookId, DateTime when) {
     return (update(booksTable)..where((t) => t.id.equals(bookId))).write(
-      BooksTableCompanion(lastReadAt: Value(DateTime.now())),
+      BooksTableCompanion(lastReadAt: Value(when)),
     );
   }
 

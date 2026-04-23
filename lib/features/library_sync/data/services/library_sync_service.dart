@@ -117,61 +117,161 @@ class LibrarySyncService {
     DateTime? localSettingsUpdatedAt,
     ImportProgressCallback? onImportProgress,
   }) async {
+    final total = Stopwatch()..start();
+    final phases = <String, int>{};
+    Future<T> phase<T>(String label, Future<T> Function() body) async {
+      final sw = Stopwatch()..start();
+      try {
+        return await body();
+      } finally {
+        sw.stop();
+        phases[label] = sw.elapsedMilliseconds;
+        debugPrint('[sync] $label: ${sw.elapsedMilliseconds}ms');
+      }
+    }
+
     final folder = config.driveFolderId!;
-    if (!await _gateway.isReadable(folder)) {
+
+    // 1. Kick off the three independent Drive reads in parallel. Previously
+    // these were serial, costing ~3× the latency of the slowest one. Each
+    // phase still records its own duration — wall-clock total is dominated
+    // by whichever finishes last.
+    final isReadableF = phase('isReadable', () => _gateway.isReadable(folder));
+    final readManifestF =
+        phase('readManifest', () => _gateway.readText(folder, _kLibraryFile));
+    final listBooksF = config.syncEpubs
+        ? phase('listBooksDir', () async {
+            try {
+              return await _gateway.listFiles(folder, _kBooksDir);
+            } catch (_) {
+              return <String>[];
+            }
+          })
+        : Future<List<String>>.value(const []);
+
+    if (!await isReadableF) {
       throw StateError('Sync folder is not readable: $folder');
     }
 
-    // 1. Read the remote library, if any.
-    final remoteRaw = await _gateway.readText(folder, _kLibraryFile);
+    final remoteRaw = await readManifestF;
+    debugPrint('[sync] manifest bytes: ${remoteRaw?.length ?? 0}');
     SyncLibrary remote;
     if (remoteRaw == null || remoteRaw.trim().isEmpty) {
       remote = SyncLibrary.empty(config.deviceId);
     } else {
       remote = SyncLibrary.decode(remoteRaw);
     }
+    debugPrint('[sync] remote books: ${remote.books.length}');
 
-    // 2. Auto-import any EPUBs dropped directly in the sync folder that
-    // aren't yet tracked by the manifest or the local DB. These become
-    // regular local books; the subsequent snapshot will include them.
+    // 2. Collect the books-dir inventory (launched in step 1).
+    Set<String> remoteEpubFiles = const {};
     if (config.syncEpubs) {
-      await _autoImportOrphanFiles(
-        folder: folder,
-        remote: remote,
-        onProgress: onImportProgress,
-      );
+      remoteEpubFiles = (await listBooksF).toSet();
+      debugPrint('[sync] remote epub files: ${remoteEpubFiles.length}');
+
+      // Auto-import any EPUBs dropped directly in the sync folder that
+      // aren't yet tracked by the manifest or the local DB. These become
+      // regular local books; the subsequent snapshot will include them.
+      await phase(
+          'autoImportOrphans',
+          () => _autoImportOrphanFiles(
+                folder: folder,
+                remote: remote,
+                remoteEpubFiles: remoteEpubFiles,
+                onProgress: onImportProgress,
+              ));
     }
 
     // 3. Snapshot the (now possibly augmented) local library.
-    final local = await _buildLocalSnapshot(
-      config: config,
-      localSettings: readSettings(),
-      localSettingsUpdatedAt:
-          localSettingsUpdatedAt ?? DateTime.now().toUtc(),
-    );
+    // If the notifier didn't mark settings dirty this session, reuse the
+    // remote timestamp so the snapshot doesn't look artificially newer than
+    // the manifest — otherwise every sync pushes a fresh settings block and
+    // the manifest-unchanged skip never triggers.
+    final settingsTs = localSettingsUpdatedAt ??
+        remote.settings?.updatedAt ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    final local = await phase(
+        'buildLocalSnapshot',
+        () => _buildLocalSnapshot(
+              config: config,
+              localSettings: readSettings(),
+              localSettingsUpdatedAt: settingsTs,
+            ));
+    debugPrint('[sync] local books: ${local.books.length}');
 
     // 4. Merge.
-    final merged = mergeLibraries(local, remote, config.deviceId).copyWithMeta(
+    final rawMerged = mergeLibraries(local, remote, config.deviceId);
+    // Garbage-collect zombie tombstones: entries with deletedAt whose
+    // syncFileName is already claimed by an active merged book. These are
+    // leftovers from an older orphan-reimport bug (deleted book → file
+    // stayed in Drive → auto-imported under a new uuid with the same
+    // filename). The active entry now owns that filename, so the tombstone
+    // propagates nothing useful to other devices — drop it to stop every
+    // sync from logging `skippedTombstones` forever.
+    final activeFileNames = <String>{
+      for (final b in rawMerged.books)
+        if (b.deletedAt == null) b.syncFileName ?? '${b.id}.epub',
+    };
+    final compactedBooks = rawMerged.books.where((b) {
+      if (b.deletedAt == null) return true;
+      final name = b.syncFileName ?? '${b.id}.epub';
+      return !activeFileNames.contains(name);
+    }).toList();
+    final compacted = compactedBooks.length == rawMerged.books.length
+        ? rawMerged
+        : SyncLibrary(
+            schemaVersion: rawMerged.schemaVersion,
+            updatedAt: rawMerged.updatedAt,
+            updatedBy: rawMerged.updatedBy,
+            settings: rawMerged.settings,
+            books: compactedBooks,
+          );
+    final droppedZombies = rawMerged.books.length - compactedBooks.length;
+    if (droppedZombies > 0) {
+      debugPrint('[sync] compacted $droppedZombies zombie tombstone(s)');
+    }
+    final merged = compacted.copyWithMeta(
       updatedAt: DateTime.now().toUtc(),
       updatedBy: config.deviceId,
     );
 
     // 5. Apply remote → local for anything where remote won.
-    await _applyToLocal(
-      merged: merged,
-      localBefore: local,
-      config: config,
-      applySettings: applySettings,
-    );
+    await phase(
+        'applyToLocal',
+        () => _applyToLocal(
+              merged: merged,
+              localBefore: local,
+              config: config,
+              applySettings: applySettings,
+            ));
 
-    // 6. Push the merged snapshot back to the folder.
-    await _gateway.writeText(folder, _kLibraryFile, merged.encode());
+    // 6. Push the merged snapshot back to the folder — but only if content
+    // actually changed. Stamping a fresh updatedAt/updatedBy on every sync
+    // triggers a ~3s Drive round-trip (find + update) for zero useful delta
+    // when the user didn't touch anything since the last push.
+    final encoded = merged.encode();
+    debugPrint('[sync] manifest write bytes: ${encoded.length}');
+    if (_libraryContentEquals(merged, remote)) {
+      debugPrint('[sync] writeManifest: SKIPPED (unchanged)');
+    } else {
+      await phase('writeManifest',
+          () => _gateway.writeText(folder, _kLibraryFile, encoded));
+    }
 
     // 7. Upload any local EPUBs that the folder is missing (if sync on).
     if (config.syncEpubs) {
-      await _uploadMissingEpubs(folder: folder, merged: merged);
+      await phase(
+          'uploadMissingEpubs',
+          () => _uploadMissingEpubs(
+                folder: folder,
+                merged: merged,
+                remoteEpubFiles: remoteEpubFiles,
+              ));
     }
 
+    total.stop();
+    debugPrint(
+        '[sync] TOTAL ${total.elapsedMilliseconds}ms — phases=$phases');
     return DateTime.now();
   }
 
@@ -230,6 +330,11 @@ class LibrarySyncService {
   }) async {
     final localById = {for (final b in localBefore.books) b.id: b};
 
+    int progressWrites = 0;
+    int lastReadWrites = 0;
+    int deletes = 0;
+    int imports = 0;
+
     for (final book in merged.books) {
       try {
         final local = localById[book.id];
@@ -238,6 +343,7 @@ class LibrarySyncService {
         if (book.deletedAt != null) {
           if (local != null) {
             await _deleteBookLocally(book.id);
+            deletes++;
           }
           continue;
         }
@@ -263,31 +369,47 @@ class LibrarySyncService {
               ));
             }
           }
+          imports++;
           continue;
         }
 
         // Book exists locally: update metadata + progress if merged differs.
-        if (book.progress != null &&
-            (local.progress == null ||
-                book.progress!.updatedAt != local.progress!.updatedAt ||
-                book.progress!.wordIndex != local.progress!.wordIndex ||
-                book.progress!.chapterIndex !=
-                    local.progress!.chapterIndex)) {
+        // DateTime comparisons use isAtSameMomentAs because local times come
+        // from Drift (local TZ, isUtc=false) while remote times come from
+        // the JSON manifest (isUtc=true). Default DateTime == compares both
+        // microsSinceEpoch AND isUtc, so the same instant on the two sides
+        // would always register as different — producing a needless write
+        // per book on every sync.
+        final localProg = local.progress;
+        final remoteProg = book.progress;
+        final progressDiffers = remoteProg != null &&
+            (localProg == null ||
+                !remoteProg.updatedAt.isAtSameMomentAs(localProg.updatedAt) ||
+                remoteProg.wordIndex != localProg.wordIndex ||
+                remoteProg.chapterIndex != localProg.chapterIndex);
+        if (progressDiffers) {
           await _progressDao.upsertProgress(ReadingProgressTableCompanion(
             bookId: Value(book.id),
-            chapterIndex: Value(book.progress!.chapterIndex),
-            wordIndex: Value(book.progress!.wordIndex),
-            wpm: Value(book.progress!.wpm),
-            updatedAt: Value(book.progress!.updatedAt),
+            chapterIndex: Value(remoteProg.chapterIndex),
+            wordIndex: Value(remoteProg.wordIndex),
+            wpm: Value(remoteProg.wpm),
+            updatedAt: Value(remoteProg.updatedAt),
           ));
+          progressWrites++;
         }
-        if (book.lastReadAt != null && book.lastReadAt != local.lastReadAt) {
-          await _booksDao.updateLastReadAt(book.id);
+        final lastReadDiffers = book.lastReadAt != null &&
+            (local.lastReadAt == null ||
+                !book.lastReadAt!.isAtSameMomentAs(local.lastReadAt!));
+        if (lastReadDiffers) {
+          await _booksDao.setLastReadAt(book.id, book.lastReadAt!);
+          lastReadWrites++;
         }
       } catch (e, st) {
         debugPrint('Failed to apply remote book "${book.id}": $e\n$st');
       }
     }
+    debugPrint(
+        '[sync]   applyToLocal writes: progress=$progressWrites lastRead=$lastReadWrites deletes=$deletes imports=$imports');
 
     // Settings: only apply when remote wins (its updatedAt > local's).
     // Isolated in its own try/catch so a prefs write failure doesn't bail
@@ -422,23 +544,61 @@ class LibrarySyncService {
   Future<void> _uploadMissingEpubs({
     required String folder,
     required SyncLibrary merged,
+    required Set<String> remoteEpubFiles,
   }) async {
+    // Filenames claimed by at least one active (non-tombstoned) book in the
+    // merged library. If two entries share a syncFileName — an old tombstone
+    // plus a re-imported orphan, for example — the tombstone's delete would
+    // clobber the active book's file and the next sync would upload it back,
+    // forever. Actives win this tie: leave the file alone.
+    final activeFileNames = <String>{};
     for (final book in merged.books) {
+      if (book.deletedAt != null) continue;
+      activeFileNames.add(book.syncFileName ?? '${book.id}.epub');
+    }
+
+    int uploads = 0;
+    int deletes = 0;
+    int skippedTombstones = 0;
+    for (final book in merged.books) {
+      final fileName = book.syncFileName ?? '${book.id}.epub';
+      final relPath = '$_kBooksDir/$fileName';
+
       if (book.deletedAt != null) {
-        await _gateway.deleteFile(folder, _epubRelPath(book));
+        if (activeFileNames.contains(fileName)) {
+          skippedTombstones++;
+          continue;
+        }
+        // Only round-trip to Drive if the file actually exists; previous
+        // syncs' tombstones would otherwise re-trigger a list+delete pair
+        // for every already-removed file on every sync.
+        if (remoteEpubFiles.contains(fileName)) {
+          final sw = Stopwatch()..start();
+          await _gateway.deleteFile(folder, relPath);
+          debugPrint('[sync]   delete "$fileName" ${sw.elapsedMilliseconds}ms');
+          deletes++;
+        }
         continue;
       }
-      final relPath = _epubRelPath(book);
-      if (await _gateway.fileExists(folder, relPath)) continue;
+
+      if (remoteEpubFiles.contains(fileName)) continue;
 
       final local = await _booksDao.getBookById(book.id);
       if (local == null || local.filePath.isEmpty) continue;
       final localFile = File(local.filePath);
       if (!await localFile.exists()) continue;
 
+      final readSw = Stopwatch()..start();
       final bytes = await localFile.readAsBytes();
+      final readMs = readSw.elapsedMilliseconds;
+      final writeSw = Stopwatch()..start();
       await _gateway.writeBytes(folder, relPath, bytes);
+      debugPrint(
+          '[sync]   upload "$fileName" ${bytes.length}B read=${readMs}ms write=${writeSw.elapsedMilliseconds}ms');
+      uploads++;
     }
+    debugPrint(
+        '[sync]   uploads=$uploads deletes=$deletes skippedTombstones=$skippedTombstones');
   }
 
   /// Discovers EPUBs that the user dropped directly in the sync folder and
@@ -459,21 +619,24 @@ class LibrarySyncService {
   Future<void> _autoImportOrphanFiles({
     required String folder,
     required SyncLibrary remote,
+    required Set<String> remoteEpubFiles,
     ImportProgressCallback? onProgress,
   }) async {
-    final List<String> files;
-    try {
-      files = await _gateway.listFiles(folder, _kBooksDir);
-    } catch (_) {
-      return;
-    }
-
-    final filesOnDisk = files.toSet();
-    await _failuresDao.retainOnly(filesOnDisk);
+    await _failuresDao.retainOnly(remoteEpubFiles);
     final previouslyFailed = await _failuresDao.getAllFileNames();
 
     final knownInManifest = remote.books
         .where((b) => b.deletedAt == null && b.syncFileName != null)
+        .map((b) => b.syncFileName!)
+        .toSet();
+    // Tombstoned filenames: re-importing them would spawn a second book row
+    // with the same syncFileName as a pre-existing tombstone, which then
+    // fights the active row each sync (tombstone deletes the active file,
+    // active re-uploads, repeat forever). Treat them as "known" so the file
+    // is left alone; the next _uploadMissingEpubs pass will clean it up via
+    // the tombstone's delete branch.
+    final tombstonedInManifest = remote.books
+        .where((b) => b.deletedAt != null && b.syncFileName != null)
         .map((b) => b.syncFileName!)
         .toSet();
     final localBooks = await _booksDao.getAllBooks();
@@ -482,9 +645,10 @@ class LibrarySyncService {
         .whereType<String>()
         .toSet();
 
-    final orphans = files
+    final orphans = remoteEpubFiles
         .where((f) => f.toLowerCase().endsWith('.epub'))
         .where((f) => !knownInManifest.contains(f))
+        .where((f) => !tombstonedInManifest.contains(f))
         .where((f) => !knownLocally.contains(f))
         .where((f) => !previouslyFailed.contains(f))
         .toList();
@@ -553,6 +717,37 @@ class LibrarySyncService {
         ),
       ));
     }
+  }
+
+  /// True when two manifests describe the same library state, ignoring the
+  /// per-sync metadata (`updatedAt`/`updatedBy`) that changes every run.
+  /// Used to skip a ~3s round-trip when the user didn't actually touch
+  /// anything between syncs.
+  bool _libraryContentEquals(SyncLibrary a, SyncLibrary b) {
+    if (a.books.length != b.books.length) {
+      debugPrint(
+          '[sync] diff: book count ${a.books.length} vs ${b.books.length}');
+      return false;
+    }
+    final aSettings = jsonEncode(a.settings?.toJson());
+    final bSettings = jsonEncode(b.settings?.toJson());
+    if (aSettings != bSettings) {
+      debugPrint('[sync] diff: settings\n  a=$aSettings\n  b=$bSettings');
+      return false;
+    }
+    // Sort by id so ordering differences don't cause false negatives.
+    final aBooks = [...a.books]..sort((x, y) => x.id.compareTo(y.id));
+    final bBooks = [...b.books]..sort((x, y) => x.id.compareTo(y.id));
+    for (int i = 0; i < aBooks.length; i++) {
+      final aj = jsonEncode(aBooks[i].toJson());
+      final bj = jsonEncode(bBooks[i].toJson());
+      if (aj != bj) {
+        debugPrint(
+            '[sync] diff: book "${aBooks[i].title}"\n  a=$aj\n  b=$bj');
+        return false;
+      }
+    }
+    return true;
   }
 
   /// Write a tombstone to the remote library for [bookId] so other devices

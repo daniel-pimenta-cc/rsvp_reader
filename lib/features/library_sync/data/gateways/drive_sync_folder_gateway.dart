@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart' as ga;
 
@@ -18,8 +19,15 @@ const _folderMime = 'application/vnd.google-apps.folder';
 class DriveSyncFolderGateway implements SyncFolderGateway {
   final Future<ga.AuthClient?> Function() _clientFactory;
   final Map<String, String> _folderIdCache = {};
+  // Cached file IDs keyed by "<parentId>/<fileName>". Populated opportunistically
+  // by listFiles, readBytes, and the create/update branches of writeBytes so
+  // subsequent reads/writes/deletes of the same file skip the ~500-700ms
+  // name-filtered files.list query inside [_findFile].
+  final Map<String, String> _fileIdCache = {};
 
   DriveSyncFolderGateway(this._clientFactory);
+
+  String _fileKey(String parentId, String fileName) => '$parentId/$fileName';
 
   Future<drive.DriveApi?> _api() async {
     final client = await _clientFactory();
@@ -85,7 +93,11 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
         await api.files.list(q: q, $fields: 'files(id,name,mimeType)');
     final files = res.files ?? <drive.File>[];
     if (files.isEmpty) return null;
-    return files.first;
+    final found = files.first;
+    if (found.id != null) {
+      _fileIdCache[_fileKey(parentId, name)] = found.id!;
+    }
+    return found;
   }
 
   @override
@@ -118,19 +130,37 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     if (parts.isEmpty) return null;
     final dirSegments = parts.sublist(0, parts.length - 1);
     final fileName = parts.last;
+    final resolveSw = Stopwatch()..start();
     final parentId = await _resolveFolder(api, folderPath, dirSegments);
+    final resolveMs = resolveSw.elapsedMilliseconds;
     if (parentId == null) return null;
-    final file = await _findFile(api, parentId, fileName);
-    if (file == null) return null;
+    int findMs = 0;
+    String? fileId = _fileIdCache[_fileKey(parentId, fileName)];
+    if (fileId == null) {
+      final findSw = Stopwatch()..start();
+      final file = await _findFile(api, parentId, fileName);
+      findMs = findSw.elapsedMilliseconds;
+      if (file == null) {
+        debugPrint(
+            '[drive] readBytes "$relativePath" NOT FOUND resolve=${resolveMs}ms find=${findMs}ms');
+        return null;
+      }
+      fileId = file.id!;
+    }
+    final dlSw = Stopwatch()..start();
     final media = await api.files.get(
-      file.id!,
+      fileId,
       downloadOptions: drive.DownloadOptions.fullMedia,
     ) as drive.Media;
     final builder = BytesBuilder(copy: false);
     await for (final chunk in media.stream) {
       builder.add(chunk);
     }
-    return builder.toBytes();
+    final bytes = builder.toBytes();
+    debugPrint(
+        '[drive] readBytes "$relativePath" ${bytes.length}B '
+        'resolve=${resolveMs}ms find=${findMs}ms dl=${dlSw.elapsedMilliseconds}ms');
+    return bytes;
   }
 
   @override
@@ -162,27 +192,44 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     }
     final dirSegments = parts.sublist(0, parts.length - 1);
     final fileName = parts.last;
+    final resolveSw = Stopwatch()..start();
     final parentId =
         await _resolveFolder(api, folderPath, dirSegments, create: true);
+    final resolveMs = resolveSw.elapsedMilliseconds;
     if (parentId == null) {
       throw StateError('Failed to resolve/create folder for $relativePath');
     }
-    final existing = await _findFile(api, parentId, fileName);
+    int findMs = 0;
+    String? existingId = _fileIdCache[_fileKey(parentId, fileName)];
+    if (existingId == null) {
+      final findSw = Stopwatch()..start();
+      final existing = await _findFile(api, parentId, fileName);
+      findMs = findSw.elapsedMilliseconds;
+      existingId = existing?.id;
+    }
     final media = drive.Media(Stream.value(bytes), bytes.length);
-    if (existing != null) {
+    final opSw = Stopwatch()..start();
+    if (existingId != null) {
       await api.files.update(
         drive.File()..name = fileName,
-        existing.id!,
+        existingId,
         uploadMedia: media,
       );
     } else {
-      await api.files.create(
+      final created = await api.files.create(
         drive.File()
           ..name = fileName
           ..parents = [parentId],
         uploadMedia: media,
       );
+      if (created.id != null) {
+        _fileIdCache[_fileKey(parentId, fileName)] = created.id!;
+      }
     }
+    debugPrint(
+        '[drive] writeBytes "$relativePath" ${bytes.length}B '
+        'resolve=${resolveMs}ms find=${findMs}ms '
+        '${existingId != null ? 'update' : 'create'}=${opSw.elapsedMilliseconds}ms');
   }
 
   @override
@@ -209,9 +256,15 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     final fileName = parts.last;
     final parentId = await _resolveFolder(api, folderPath, dirSegments);
     if (parentId == null) return;
-    final file = await _findFile(api, parentId, fileName);
-    if (file == null) return;
-    await api.files.delete(file.id!);
+    final cacheKey = _fileKey(parentId, fileName);
+    String? fileId = _fileIdCache[cacheKey];
+    if (fileId == null) {
+      final file = await _findFile(api, parentId, fileName);
+      if (file == null) return;
+      fileId = file.id!;
+    }
+    await api.files.delete(fileId);
+    _fileIdCache.remove(cacheKey);
   }
 
   @override
@@ -222,13 +275,17 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     final api = await _api();
     if (api == null) return const [];
     final parts = _split(relativePath);
+    final resolveSw = Stopwatch()..start();
     final parentId = await _resolveFolder(api, folderPath, parts);
+    final resolveMs = resolveSw.elapsedMilliseconds;
     if (parentId == null) return const [];
     final names = <String>[];
     String? pageToken;
+    int pages = 0;
     final q = "'${_esc(parentId)}' in parents "
         'and trashed=false '
         "and mimeType!='$_folderMime'";
+    final listSw = Stopwatch()..start();
     do {
       final res = await api.files.list(
         q: q,
@@ -236,12 +293,21 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
         $fields: 'nextPageToken,files(id,name)',
         pageSize: 200,
       );
+      pages++;
       for (final f in res.files ?? <drive.File>[]) {
         final name = f.name;
-        if (name != null && name.isNotEmpty) names.add(name);
+        if (name != null && name.isNotEmpty) {
+          names.add(name);
+          if (f.id != null) {
+            _fileIdCache[_fileKey(parentId, name)] = f.id!;
+          }
+        }
       }
       pageToken = res.nextPageToken;
     } while (pageToken != null && pageToken.isNotEmpty);
+    debugPrint(
+        '[drive] listFiles "$relativePath" ${names.length} files '
+        'resolve=${resolveMs}ms list=${listSw.elapsedMilliseconds}ms pages=$pages');
     return names;
   }
 
@@ -271,7 +337,10 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     return created.id!;
   }
 
-  /// Drop cached folder IDs — useful after disconnect so the next sign-in
-  /// starts from a clean slate even on the same gateway instance.
-  void clearCache() => _folderIdCache.clear();
+  /// Drop cached folder / file IDs — useful after disconnect so the next
+  /// sign-in starts from a clean slate even on the same gateway instance.
+  void clearCache() {
+    _folderIdCache.clear();
+    _fileIdCache.clear();
+  }
 }
