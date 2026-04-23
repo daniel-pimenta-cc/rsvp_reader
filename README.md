@@ -21,6 +21,7 @@ Words are displayed one at a time at a configurable WPM, with the **Optimal Reco
 - **Book completion celebration** — automatic recap on the last word of a book with time/words/sessions/WPM stats, a 0-5 star rating, and an optional shareable card
 - **Bilingual UI** — English and Brazilian Portuguese (PT-BR)
 - **Offline-first** — books and progress stored locally in SQLite via Drift
+- **Google Drive sync (optional)** — library, reading progress, and display settings sync across devices through a user-owned `RSVP Reader/` folder on Drive (`drive.file` scope, so the app only sees files it created). Android only
 - **Unicode-aware ORP calculation** — handles Portuguese accents and punctuation correctly
 
 ## Screenshots
@@ -104,7 +105,7 @@ lib/
 
 **Key concept — `WordToken`:** every word of every book is pre-processed at import time with its ORP index and timing multiplier already calculated. The RSVP engine does *no* computation inside the per-word tick, keeping playback smooth at 600+ WPM.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/rsvp-engine.md](docs/rsvp-engine.md) for detailed documentation on the data flow, state management, ORP math, smart timing multipliers, ramp-up, and velocity-based scroll stepping. [docs/reading-stats.md](docs/reading-stats.md) covers the reading-session model, stats dashboard, and the monthly recap + completion share pipelines.
+See [docs/architecture.md](docs/architecture.md) and [docs/rsvp-engine.md](docs/rsvp-engine.md) for detailed documentation on the data flow, state management, ORP math, smart timing multipliers, ramp-up, and velocity-based scroll stepping. [docs/reading-stats.md](docs/reading-stats.md) covers the reading-session model, stats dashboard, and the monthly recap + completion share pipelines. [docs/library-sync.md](docs/library-sync.md) documents the Drive sync pipeline — manifest format, merge rules, tombstone handling, and the DateTime / cache invariants.
 
 ## Tech stack
 

@@ -59,6 +59,8 @@ lib/
     article_import/  # fetch URL -> readability -> WordToken, cache de tokens no DB
     library_sync/    # sync de biblioteca (EPUB) + progresso + settings via Google Drive
                      # (drive.file scope, pasta "RSVP Reader" no Drive do usuario)
+                     # pipeline paraleliza read/list, pula write quando nada mudou,
+                     # compacta tombstones zumbis, cache de fileId no gateway
     rsvp_reader/
       domain/entities/  rsvp_state (inclui finishTicket), display_settings, word_token, chapter
       presentation/
@@ -124,8 +126,12 @@ lib/
 - **Comparar `source`**: usar as constantes de `BookSource` (`lib/database/tables/book_source.dart`), nunca literais `'epub'`/`'article'`.
 - **URLs**: usar `UrlUtils.extractHttpUrl` / `parseWithHttpsFallback` em `lib/core/utils/url_utils.dart` — nao reimplementar parsing ad-hoc.
 - **Font mapping**: usar `mapFontFamily()` de `lib/core/utils/font_mapper.dart` — nao reimplementar switch de nomes em cada widget.
-- **Sync via Google Drive**: `DriveSyncFolderGateway` implementa `SyncFolderGateway` usando googleapis com scope `drive.file` (so enxerga arquivos que o proprio app criou). Auth via `google_sign_in` em `DriveAuthNotifier` — silent sign-in no startup, connect explicito em Settings. Root folder "RSVP Reader" criada sob demanda; id cacheado em `SyncConfig.driveFolderId`. Android-only.
+- **Sync via Google Drive**: `DriveSyncFolderGateway` implementa `SyncFolderGateway` usando googleapis com scope `drive.file` (so enxerga arquivos que o proprio app criou). Auth via `google_sign_in` em `DriveAuthNotifier` — silent sign-in no startup, connect explicito em Settings. Root folder "RSVP Reader" criada sob demanda; id cacheado em `SyncConfig.driveFolderId`. Android-only. Pipeline detalhada em [docs/library-sync.md](docs/library-sync.md).
 - **Sync de biblioteca so inclui EPUB**: `LibrarySyncService` filtra `source=='epub'`. Artigos sao sempre locais.
+- **DateTime compare no sync: SEMPRE `isAtSameMomentAs`, nunca `==`**: local DateTime vem do Drift com `isUtc=false`, remote vem de JSON UTC com `isUtc=true`. `DateTime.==` compara `(micros, isUtc)` — mesmo instante registra como diferente, causando um write de DB por livro todo sync. Afeta qualquer code path que compare lastReadAt/progress.updatedAt/etc entre local e remoto.
+- **Tombstone + syncFileName em sync**: um livro ativo sempre vence disputa de `syncFileName` contra um tombstone (em `_uploadMissingEpubs` o tombstone e pulado com `skippedTombstones`; em `_autoImportOrphanFiles` o filename tombstonado e tratado como "ja conhecido" para nao ressuscitar como orfao). Qualquer codigo novo que itere `merged.books` e opere por filename deve respeitar essa invariante. Tombstones cujo filename e reivindicado por um ativo sao compactados fora do merged antes do push.
+- **`_libraryContentEquals`**: compara books (sorted by id, JSON-encoded) + settings ignorando meta `updatedAt`/`updatedBy`. Quando `true`, o sync pula o `writeManifest` (economiza ~2-3s idle). Ao adicionar campos novos ao `SyncLibraryBook` ou settings, garantir que entrem no `toJson` (o `_libraryContentEquals` depende disso).
+- **`DriveSyncFolderGateway._fileIdCache`**: caches `fileId` por `(parentId, fileName)`. Populado opportunisticamente por `listFiles`, `readBytes`, e branch "create" de `writeBytes`. Consumido por todas as operacoes pra pular o `_findFile` (~500-700ms). `deleteFile` invalida a entrada; `clearCache()` no disconnect. Nao e thread-safe; assume uma unica sync em andamento por gateway (serializado pelo `LibrarySyncNotifier`).
 - Testes unitarios dos core utils sao prioridade (ORP, timing, tokenizer, HTML stripper, readability). HTML stripper deve cobrir tags `_skipTags` para evitar regressao de CSS/JS vazando no texto. Logica pura de stats tambem (`computeSessionAvgWpm`, `buildSnapshot`, `buildMonthlyRecap`, `buildCompletionSummary`).
 - **Share cards (recap, completion)**: paleta fixa (`_paper`, `_ink`, `_accent` etc. hardcoded nos widgets), NAO derivada de `Theme.of(context)` — exportacao deve ser consistente entre usuarios. Fonts via `GoogleFonts.inter()` / `GoogleFonts.lora()` (strings `'Inter'`/`'Lora'` nao sao asset families registrados).
 - **Engine e finishTicket**: qualquer ponto novo de saida de `isPlaying=true` (alem de pause/end/ereader/dispose) deve chamar `_flushSession()` antes de zerar contadores. Fim-de-livro organico (`_advanceWord` hit end, nao seek) incrementa `state.finishTicket` para disparar a tela de completion.
@@ -137,5 +143,6 @@ lib/
 - [docs/rsvp-engine.md](docs/rsvp-engine.md) — motor RSVP, ORP, timing, ramp-up
 - [docs/article-import.md](docs/article-import.md) — pipeline de artigos web, readability, share sheet
 - [docs/reading-stats.md](docs/reading-stats.md) — sessions, stats dashboard, monthly recap, book completion, pipeline de export de PNG
+- [docs/library-sync.md](docs/library-sync.md) — sync via Drive, manifest, merge rules, tombstones + compactacao, cache de fileId, invariantes de DateTime
 - [docs/share-extension-ios.md](docs/share-extension-ios.md) — setup do share extension iOS (Xcode)
 - [tasks.md](tasks.md) — bugs e features pendentes

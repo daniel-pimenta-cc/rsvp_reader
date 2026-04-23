@@ -56,6 +56,17 @@ Pipeline: URL → `http.get` → HTML → `ReadabilityExtractor` → `HtmlStripp
 ### library_sync
 Sincroniza metadata da biblioteca, `reading_progress` e `DisplaySettings` atraves de uma pasta "RSVP Reader" criada pelo app no Google Drive do usuario (scope `drive.file` — so enxerga arquivos que o app criou). Backend unico via `DriveSyncFolderGateway` (implementa `SyncFolderGateway`); `DriveAuthNotifier` cuida de sign-in/sign-out e de gerar o `http.Client` autenticado. `SyncConfig.driveFolderId` cacheia o id da pasta root. **Filtra `source='epub'`** — artigos sao sempre locais. Android-only.
 
+Pipeline de `LibrarySyncService.sync()`:
+1. 3 leituras em paralelo: `isReadable` + `readManifest` + `listFiles(books/)` — eram serial, agora pagam so o `max()` das latencias (~1.5s em vez de ~4.5s).
+2. `_autoImportOrphanFiles` — EPUBs largados direto na pasta do Drive viram livros novos locais (respeitando tombstones para nao ressuscitar deletes).
+3. Snapshot local + `mergeLibraries` LWW.
+4. **Compactacao de tombstones zumbis**: se um tombstone compartilha `syncFileName` com um ativo em merged, o tombstone e removido — evita o flip-flop onde o delete do tombstone clobberava o arquivo do ativo.
+5. `_applyToLocal` — aplica progress + lastReadAt + tombstone deletes. **DateTime compare via `isAtSameMomentAs`** para normalizar TZ (local vem do Drift com `isUtc=false`, remote vem de JSON UTC; `==` padrao diria sempre `!=`).
+6. `_libraryContentEquals(merged, remote)` — se identicos ignorando meta `updatedAt`/`updatedBy`, **pula o write** (~2-3s economizados no sync idle).
+7. `_uploadMissingEpubs` — sobe EPUBs faltando, respeitando o Set compartilhado de `listFiles`; tombstones que batem com ativo sao pulados (`skippedTombstones`).
+
+`DriveSyncFolderGateway` mantem caches de `folderId` e `fileId` populados ao longo das operacoes — read/write/delete no mesmo arquivo pulam o `_findFile` (~500-700ms cada). Todas as fases emitem `[sync]`/`[drive]` debug prints com timings. Detalhes em [library-sync.md](library-sync.md).
+
 ### rsvp_reader
 Feature central. Widgets organizados em arquivos focados:
 
