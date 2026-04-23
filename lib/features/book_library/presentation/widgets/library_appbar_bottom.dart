@@ -19,14 +19,22 @@ class LibraryAppBarBottom extends StatelessWidget
 
   static const _tabsHeight = 48.0;
   static const _progressHeight = 48.0;
+  static const _syncHairlineHeight = 2.0;
+
+  bool get _showSyncHairline =>
+      !syncState.isImporting && syncState.stage == SyncStage.syncing;
 
   @override
-  Size get preferredSize => Size.fromHeight(
-        syncState.isImporting ? _tabsHeight + _progressHeight : _tabsHeight,
-      );
+  Size get preferredSize {
+    double height = _tabsHeight;
+    if (syncState.isImporting) height += _progressHeight;
+    if (_showSyncHairline) height += _syncHairlineHeight;
+    return Size.fromHeight(height);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -36,6 +44,15 @@ class LibraryAppBarBottom extends StatelessWidget
             total: syncState.importTotal ?? 0,
             fileName: syncState.importFileName ?? '',
             l10n: l10n,
+          )
+        else if (_showSyncHairline)
+          SizedBox(
+            height: _syncHairlineHeight,
+            child: LinearProgressIndicator(
+              minHeight: _syncHairlineHeight,
+              backgroundColor: theme.colorScheme.outlineVariant.withAlpha(80),
+              color: theme.colorScheme.primary.withAlpha(160),
+            ),
           ),
         TabBar(
           controller: tabController,

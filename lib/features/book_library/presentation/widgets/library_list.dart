@@ -25,56 +25,61 @@ class LibraryList extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final categorizedAsync = ref.watch(categorizedLibraryProvider(kind));
 
-    return categorizedAsync.when(
-      data: (categorized) {
-        final syncConfigured = kind == LibraryKind.books &&
-            ref.watch(syncConfigProvider).isConfigured;
+    // Keep showing the last list while the provider refetches (e.g. because a
+    // background sync touched a row and the Drift stream re-emitted). The
+    // appbar's thin sync bar signals that something is happening; swapping
+    // the whole body back to the skeleton flashes and is jarring.
+    final categorized = categorizedAsync.valueOrNull;
+    if (categorized == null) {
+      if (categorizedAsync.hasError) {
+        return Center(child: Text('Error: ${categorizedAsync.error}'));
+      }
+      return const LibrarySkeleton();
+    }
 
-        final scroll = CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: categorized.isEmpty
-              ? [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _EmptyState(kind: kind, l10n: l10n),
-                  ),
-                ]
-              : [
-                  _buildSection(
-                    context,
-                    ref,
-                    l10n,
-                    title: l10n.librarySectionInProgress,
-                    books: categorized.inProgress,
-                  ),
-                  _buildSection(
-                    context,
-                    ref,
-                    l10n,
-                    title: l10n.librarySectionNotStarted,
-                    books: categorized.notStarted,
-                  ),
-                  _buildSection(
-                    context,
-                    ref,
-                    l10n,
-                    title: l10n.librarySectionRead,
-                    books: categorized.read,
-                  ),
-                  const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.xxl * 2)),
-                ],
-        );
+    final syncConfigured = kind == LibraryKind.books &&
+        ref.watch(syncConfigProvider).isConfigured;
 
-        if (!syncConfigured) return scroll;
-        return RefreshIndicator(
-          onRefresh: () =>
-              ref.read(librarySyncProvider.notifier).triggerSync(),
-          child: scroll,
-        );
-      },
-      loading: () => const LibrarySkeleton(),
-      error: (error, _) => Center(child: Text('Error: $error')),
+    final scroll = CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: categorized.isEmpty
+          ? [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _EmptyState(kind: kind, l10n: l10n),
+              ),
+            ]
+          : [
+              _buildSection(
+                context,
+                ref,
+                l10n,
+                title: l10n.librarySectionInProgress,
+                books: categorized.inProgress,
+              ),
+              _buildSection(
+                context,
+                ref,
+                l10n,
+                title: l10n.librarySectionNotStarted,
+                books: categorized.notStarted,
+              ),
+              _buildSection(
+                context,
+                ref,
+                l10n,
+                title: l10n.librarySectionRead,
+                books: categorized.read,
+              ),
+              const SliverToBoxAdapter(
+                  child: SizedBox(height: AppSpacing.xxl * 2)),
+            ],
+    );
+
+    if (!syncConfigured) return scroll;
+    return RefreshIndicator(
+      onRefresh: () => ref.read(librarySyncProvider.notifier).triggerSync(),
+      child: scroll,
     );
   }
 
