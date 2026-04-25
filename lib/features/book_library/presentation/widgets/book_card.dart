@@ -60,9 +60,15 @@ class _BookCardState extends ConsumerState<BookCard> {
       scale: _pressed ? 0.97 : 1.0,
       duration: AppDurations.fast,
       curve: AppCurves.standard,
-      child: DecoratedBox(
+      // foregroundDecoration draws on top of the card contents, so the
+      // selection stroke wraps around the cover image too — a `border` on
+      // the background BoxDecoration would be obscured by the cover.
+      child: Container(
         decoration: BoxDecoration(
           color: scheme.surfaceContainer,
+          borderRadius: AppRadius.borderLg,
+        ),
+        foregroundDecoration: BoxDecoration(
           borderRadius: AppRadius.borderLg,
           border: widget.selected
               ? Border.all(color: scheme.primary, width: 1.5)

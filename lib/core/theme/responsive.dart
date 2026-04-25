@@ -23,24 +23,3 @@ extension ResponsiveContext on BuildContext {
   }
 }
 
-int gridCrossAxisCount(BuildContext context) {
-  switch (context.deviceType) {
-    case DeviceType.compact:
-      return 2;
-    case DeviceType.medium:
-      return 3;
-    case DeviceType.expanded:
-      return 4;
-  }
-}
-
-double gridAspectRatio(BuildContext context) {
-  switch (context.deviceType) {
-    case DeviceType.compact:
-      return 0.65;
-    case DeviceType.medium:
-      return 0.7;
-    case DeviceType.expanded:
-      return 0.72;
-  }
-}

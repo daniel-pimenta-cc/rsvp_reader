@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/responsive.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 
 class LibrarySkeleton extends StatelessWidget {
@@ -9,7 +8,6 @@ class LibrarySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final crossAxisCount = gridCrossAxisCount(context);
     return SkeletonHost(
       child: GridView.builder(
         padding: const EdgeInsets.fromLTRB(
@@ -18,13 +16,13 @@ class LibrarySkeleton extends StatelessWidget {
           AppSpacing.base,
           AppSpacing.sm,
         ),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: gridAspectRatio(context),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200,
+          childAspectRatio: 0.68,
           crossAxisSpacing: AppSpacing.md,
           mainAxisSpacing: AppSpacing.md,
         ),
-        itemCount: crossAxisCount * 3,
+        itemCount: 9,
         itemBuilder: (_, i) => const SkeletonBookCard(),
       ),
     );

@@ -93,8 +93,6 @@ class LibraryList extends ConsumerWidget {
     if (books.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
-    final crossAxisCount = gridCrossAxisCount(context);
-    final ratio = gridAspectRatio(context);
     final selectedId = ref.watch(selectedBookIdProvider);
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(
@@ -115,9 +113,12 @@ class LibraryList extends ConsumerWidget {
             ),
           ),
           SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              childAspectRatio: ratio,
+            // Sizes columns from the *sliver's* width, not the screen's, so
+            // the master-detail panel (~440px) doesn't end up cramming the
+            // 4-column desktop layout into half the space.
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 200,
+              childAspectRatio: 0.68,
               crossAxisSpacing: AppSpacing.md,
               mainAxisSpacing: AppSpacing.md,
             ),
