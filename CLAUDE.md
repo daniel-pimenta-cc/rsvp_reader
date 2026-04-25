@@ -1,6 +1,6 @@
 # RSVP Reader
 
-Leitor de livros (EPUB) e artigos web em Flutter com RSVP (Rapid Serial Visual Presentation), para Android/iOS/tablet.
+Leitor de livros (EPUB) e artigos web em Flutter com RSVP (Rapid Serial Visual Presentation), para Android/iOS/tablet/Linux desktop.
 
 ## Comandos
 
@@ -17,7 +17,7 @@ flutter run                                        # rodar no device/emulador
 
 Feature-based Clean Architecture com Riverpod. Ver [docs/architecture.md](docs/architecture.md).
 
-**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent | google_sign_in + googleapis (Drive v3) | google_fonts (Lora + Inter) | fl_chart (stats) | share_plus (export PNG) | intl (DateFormat)
+**Stack:** Flutter 3.x | Riverpod 2 (sem codegen) | Drift/SQLite | SharedPreferences | epub_pro | go_router | http | receive_sharing_intent (mobile-only) | google_sign_in + googleapis (Drive v3, Android-only) | google_fonts (Lora + Inter) | fl_chart (stats) | share_plus (export PNG) | desktop_drop (Linux) | intl (DateFormat)
 
 ## Estrutura de pastas
 
@@ -40,9 +40,11 @@ lib/
     widgets/      # section_card, skeleton_loader (shimmer com AnimationController compartilhado)
     utils/        # orp_calculator, word_timing, html_stripper, text_tokenizer,
                   # readability_extractor, url_utils, sync_file_name, font_mapper,
-                  # image_export_service (RepaintBoundary -> PNG -> share_plus)
+                  # image_export_service (RepaintBoundary -> PNG -> share_plus),
+                  # platform_capabilities (supportsShareIntent/supportsDriveSync/isDesktop)
     di/           # provider overrides (appDatabaseProvider etc.)
-    share/        # share_intent_handler (Android share target)
+    share/        # share_intent_handler (Android share target),
+                  # desktop_drop_handler (drag-drop de EPUB/URL no Linux)
   database/       # Drift: app_database, tables/ (books, reading_progress,
                   # reading_session, cached_tokens, sync_import_failures,
                   # book_source constants), daos/
@@ -126,7 +128,8 @@ lib/
 - **Comparar `source`**: usar as constantes de `BookSource` (`lib/database/tables/book_source.dart`), nunca literais `'epub'`/`'article'`.
 - **URLs**: usar `UrlUtils.extractHttpUrl` / `parseWithHttpsFallback` em `lib/core/utils/url_utils.dart` — nao reimplementar parsing ad-hoc.
 - **Font mapping**: usar `mapFontFamily()` de `lib/core/utils/font_mapper.dart` — nao reimplementar switch de nomes em cada widget.
-- **Sync via Google Drive**: `DriveSyncFolderGateway` implementa `SyncFolderGateway` usando googleapis com scope `drive.file` (so enxerga arquivos que o proprio app criou). Auth via `google_sign_in` em `DriveAuthNotifier` — silent sign-in no startup, connect explicito em Settings. Root folder "RSVP Reader" criada sob demanda; id cacheado em `SyncConfig.driveFolderId`. Android-only. Pipeline detalhada em [docs/library-sync.md](docs/library-sync.md).
+- **Sync via Google Drive**: `DriveSyncFolderGateway` implementa `SyncFolderGateway` usando googleapis com scope `drive.file` (so enxerga arquivos que o proprio app criou). Auth via `google_sign_in` em `DriveAuthNotifier` — silent sign-in no startup, connect explicito em Settings. Root folder "RSVP Reader" criada sob demanda; id cacheado em `SyncConfig.driveFolderId`. Android-only — em outras plataformas a UI de sync some via `PlatformCapabilities.supportsDriveSync`. Pipeline detalhada em [docs/library-sync.md](docs/library-sync.md).
+- **Capacidades por plataforma**: usar `PlatformCapabilities` (`lib/core/utils/platform_capabilities.dart`) em vez de espalhar `Platform.isAndroid` / `Platform.isLinux`. Getters: `supportsShareIntent`, `supportsDriveSync`, `isDesktop`, `isMobile`. Linux usa `DesktopDropHandler` (drag-drop de EPUB/URL) e atalhos de teclado no reader (`Space`/`←→`/`↑↓`/`Esc`); detalhes em [docs/linux-desktop.md](docs/linux-desktop.md).
 - **Sync de biblioteca so inclui EPUB**: `LibrarySyncService` filtra `source=='epub'`. Artigos sao sempre locais.
 - **DateTime compare no sync: SEMPRE `isAtSameMomentAs`, nunca `==`**: local DateTime vem do Drift com `isUtc=false`, remote vem de JSON UTC com `isUtc=true`. `DateTime.==` compara `(micros, isUtc)` — mesmo instante registra como diferente, causando um write de DB por livro todo sync. Afeta qualquer code path que compare lastReadAt/progress.updatedAt/etc entre local e remoto.
 - **Tombstone + syncFileName em sync**: um livro ativo sempre vence disputa de `syncFileName` contra um tombstone (em `_uploadMissingEpubs` o tombstone e pulado com `skippedTombstones`; em `_autoImportOrphanFiles` o filename tombstonado e tratado como "ja conhecido" para nao ressuscitar como orfao). Qualquer codigo novo que itere `merged.books` e opere por filename deve respeitar essa invariante. Tombstones cujo filename e reivindicado por um ativo sao compactados fora do merged antes do push.
@@ -145,4 +148,5 @@ lib/
 - [docs/reading-stats.md](docs/reading-stats.md) — sessions, stats dashboard, monthly recap, book completion, pipeline de export de PNG
 - [docs/library-sync.md](docs/library-sync.md) — sync via Drive, manifest, merge rules, tombstones + compactacao, cache de fileId, invariantes de DateTime
 - [docs/share-extension-ios.md](docs/share-extension-ios.md) — setup do share extension iOS (Xcode)
+- [docs/linux-desktop.md](docs/linux-desktop.md) — build do Linux desktop, atalhos, drag-drop, limitações
 - [tasks.md](tasks.md) — bugs e features pendentes

@@ -488,6 +488,18 @@ abstract class AppLocalizations {
   /// **'RSVP mode'**
   String get switchToRsvpMode;
 
+  /// No description provided for @hideLibraryPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide library'**
+  String get hideLibraryPanel;
+
+  /// No description provided for @showLibraryPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show library'**
+  String get showLibraryPanel;
+
   /// No description provided for @settingsFocusLine.
   ///
   /// In en, this message translates to:

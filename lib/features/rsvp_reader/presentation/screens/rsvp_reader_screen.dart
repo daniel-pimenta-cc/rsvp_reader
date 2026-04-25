@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/routing/selected_book_provider.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/responsive.dart';
+import '../../../../core/utils/platform_capabilities.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/rsvp_state.dart';
 import '../providers/display_settings_provider.dart';
@@ -100,6 +103,10 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
       ),
     );
 
+    final wrappedReaderBody = PlatformCapabilities.isDesktop
+        ? _wrapWithShortcuts(state, engine, readerBody)
+        : readerBody;
+
     final useSidePanel = _useSidePanel(context);
 
     return Scaffold(
@@ -107,14 +114,53 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
       body: useSidePanel
           ? Row(
               children: [
-                Expanded(child: readerBody),
+                Expanded(child: wrappedReaderBody),
                 ReaderSidePanel(
                   bookId: widget.bookId,
                   settings: state.displaySettings,
                 ),
               ],
             )
-          : readerBody,
+          : wrappedReaderBody,
+    );
+  }
+
+  Widget _wrapWithShortcuts(
+    RsvpState state,
+    RsvpEngineNotifier engine,
+    Widget child,
+  ) {
+    return Focus(
+      autofocus: true,
+      child: CallbackShortcuts(
+        bindings: <ShortcutActivator, VoidCallback>{
+          const SingleActivator(LogicalKeyboardKey.space): engine.togglePlayPause,
+          const SingleActivator(LogicalKeyboardKey.arrowRight):
+              () => engine.skipForward(1),
+          const SingleActivator(LogicalKeyboardKey.arrowLeft):
+              () => engine.skipBackward(1),
+          const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true):
+              () => engine.skipForward(AppConstants.skipWordCount),
+          const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true):
+              () => engine.skipBackward(AppConstants.skipWordCount),
+          const SingleActivator(LogicalKeyboardKey.arrowUp): engine.increaseWpm,
+          const SingleActivator(LogicalKeyboardKey.arrowDown): engine.decreaseWpm,
+          const SingleActivator(LogicalKeyboardKey.escape): () {
+            if (state.isPlaying) engine.pause();
+            if (widget.onClose != null) {
+              widget.onClose!();
+            } else if (mounted) {
+              context.pop();
+            }
+          },
+          if (widget.onClose != null)
+            const SingleActivator(LogicalKeyboardKey.keyB, control: true): () =>
+                ref
+                    .read(libraryPanelVisibleProvider.notifier)
+                    .update((v) => !v),
+        },
+        child: child,
+      ),
     );
   }
 
@@ -196,6 +242,12 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     final l10n = AppLocalizations.of(context)!;
     final isEreader = state.mode == ReaderMode.ereader;
     final theme = Theme.of(context);
+    // `onClose` is only injected by the master-detail host, so its presence
+    // doubles as a "we're in the split-view" signal.
+    final inMasterDetail = widget.onClose != null;
+    final libraryVisible = inMasterDetail
+        ? ref.watch(libraryPanelVisibleProvider)
+        : false;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -215,6 +267,19 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
             icon:
                 Icon(Icons.arrow_back, color: state.displaySettings.wordColor),
           ),
+          if (inMasterDetail)
+            IconButton(
+              onPressed: () => ref
+                  .read(libraryPanelVisibleProvider.notifier)
+                  .update((v) => !v),
+              tooltip: libraryVisible
+                  ? l10n.hideLibraryPanel
+                  : l10n.showLibraryPanel,
+              icon: Icon(
+                libraryVisible ? Icons.menu_open : Icons.menu,
+                color: state.displaySettings.wordColor,
+              ),
+            ),
           Expanded(
             child: Text(
               state.currentChapterTitle ?? '',

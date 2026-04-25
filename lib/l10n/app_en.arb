@@ -96,6 +96,8 @@
   "tapToResume": "Tap to resume",
   "switchToEreaderMode": "Reading mode",
   "switchToRsvpMode": "RSVP mode",
+  "hideLibraryPanel": "Hide library",
+  "showLibraryPanel": "Show library",
   "settingsFocusLine": "Focus line",
   "settingsFocusLineDesc": "Show a thin line below the word to anchor your gaze",
   "settingsFocusLineProgress": "Progress on focus line",

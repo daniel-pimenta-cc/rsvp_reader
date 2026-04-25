@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/platform_capabilities.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../library_sync/presentation/widgets/sync_settings_section.dart';
 import '../../../rsvp_reader/presentation/providers/display_settings_provider.dart';
@@ -43,10 +44,12 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             Divider(color: settings.wordColor.withAlpha(40), height: 1),
             const SizedBox(height: AppSpacing.base),
-            const SyncSettingsSection(),
-            const SizedBox(height: AppSpacing.lg),
-            Divider(color: settings.wordColor.withAlpha(40), height: 1),
-            const SizedBox(height: AppSpacing.base),
+            if (PlatformCapabilities.supportsDriveSync) ...[
+              const SyncSettingsSection(),
+              const SizedBox(height: AppSpacing.lg),
+              Divider(color: settings.wordColor.withAlpha(40), height: 1),
+              const SizedBox(height: AppSpacing.base),
+            ],
             Text(
               l10n.settingsAbout.toUpperCase(),
               style: TextStyle(

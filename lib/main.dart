@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app.dart';
 import 'core/di/providers.dart';
+import 'core/utils/platform_capabilities.dart';
 import 'database/app_database.dart';
 import 'features/library_sync/presentation/providers/drive_auth_provider.dart';
 import 'features/library_sync/presentation/providers/library_sync_provider.dart';
@@ -18,12 +19,14 @@ import 'features/rsvp_reader/presentation/providers/display_settings_provider.da
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
+  if (PlatformCapabilities.isMobile) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
 
   final dbDir = await getApplicationDocumentsDirectory();
   final dbFile = File('${dbDir.path}/rsvp_reader.db');
@@ -39,7 +42,9 @@ void main() async {
 
   // Fire an initial sync on startup if the user has configured a folder.
   // We need to wait for SyncConfigNotifier.load() to finish first.
-  unawaited(_initialSync(container));
+  if (PlatformCapabilities.supportsDriveSync) {
+    unawaited(_initialSync(container));
+  }
 
   runApp(
     UncontrolledProviderScope(

@@ -62,70 +62,88 @@ class EpubImportNotifier extends StateNotifier<ImportState> {
         return;
       }
 
-      state = state.copyWith(status: ImportStatus.processing);
-
-      final filePath = result.files.single.path!;
-      final pickedName = result.files.single.name;
-      final bytes = await File(filePath).readAsBytes();
-
-      // 1. Parse EPUB
-      final extractionService = _ref.read(epubExtractionServiceProvider);
-      final parsedBook = await extractionService.extractBook(bytes);
-
-      if (parsedBook.chapters.isEmpty) {
-        state = state.copyWith(
-          status: ImportStatus.error,
-          errorMessage: 'No readable content found in EPUB',
-        );
-        return;
-      }
-
-      // Pre-generate the book id so the on-disk filename matches the DB row.
-      final bookId = const Uuid().v4();
-
-      final appDir = await getApplicationDocumentsDirectory();
-      final booksDir = Directory('${appDir.path}/${AppConstants.booksSubdir}');
-      if (!booksDir.existsSync()) {
-        await booksDir.create(recursive: true);
-      }
-      final savedPath = '${booksDir.path}/$bookId.epub';
-      await File(savedPath).writeAsBytes(bytes);
-
-      // We keep the user's filename for the sync folder (disambiguated
-      // against existing books) so the files there are human-browsable.
-      final booksDao = _ref.read(booksDaoProvider);
-      final syncFileName = await uniqueSyncFileName(
-        desired: pickedName,
-        booksDao: booksDao,
+      await _importFromPath(
+        result.files.single.path!,
+        displayName: result.files.single.name,
       );
-
-      await persistParsedBook(
-        book: parsedBook,
-        booksDao: booksDao,
-        tokensDao: _ref.read(cachedTokensDaoProvider),
-        id: bookId,
-        filePath: savedPath,
-        syncFileName: syncFileName,
-      );
-
-      // Do NOT create a reading_progress row here — the engine treats a
-      // missing row as "not started" and defaults to (0, 0, defaultWpm) on
-      // first open. Creating it at import time would put every freshly
-      // imported book into the "In progress" section of the library.
-
-      state = state.copyWith(
-        status: ImportStatus.done,
-        importedBookId: bookId,
-      );
-
-      // Push new book to sync folder (will copy EPUB too if syncEpubs is on).
-      _ref.read(librarySyncProvider.notifier).schedulePush();
     } catch (e) {
       state = state.copyWith(
         status: ImportStatus.error,
         errorMessage: e.toString(),
       );
     }
+  }
+
+  /// Entry point for drag-and-drop on desktop and any other caller that
+  /// already has a file path on disk.
+  Future<void> importFromPath(String path) async {
+    try {
+      await _importFromPath(path);
+    } catch (e) {
+      state = state.copyWith(
+        status: ImportStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<void> _importFromPath(String filePath, {String? displayName}) async {
+    state = state.copyWith(status: ImportStatus.processing);
+
+    final pickedName = displayName ?? filePath.split(Platform.pathSeparator).last;
+    final bytes = await File(filePath).readAsBytes();
+
+    final extractionService = _ref.read(epubExtractionServiceProvider);
+    final parsedBook = await extractionService.extractBook(bytes);
+
+    if (parsedBook.chapters.isEmpty) {
+      state = state.copyWith(
+        status: ImportStatus.error,
+        errorMessage: 'No readable content found in EPUB',
+      );
+      return;
+    }
+
+    // Pre-generate the book id so the on-disk filename matches the DB row.
+    final bookId = const Uuid().v4();
+
+    final appDir = await getApplicationDocumentsDirectory();
+    final booksDir = Directory('${appDir.path}/${AppConstants.booksSubdir}');
+    if (!booksDir.existsSync()) {
+      await booksDir.create(recursive: true);
+    }
+    final savedPath = '${booksDir.path}/$bookId.epub';
+    await File(savedPath).writeAsBytes(bytes);
+
+    // We keep the user's filename for the sync folder (disambiguated
+    // against existing books) so the files there are human-browsable.
+    final booksDao = _ref.read(booksDaoProvider);
+    final syncFileName = await uniqueSyncFileName(
+      desired: pickedName,
+      booksDao: booksDao,
+    );
+
+    await persistParsedBook(
+      book: parsedBook,
+      booksDao: booksDao,
+      tokensDao: _ref.read(cachedTokensDaoProvider),
+      id: bookId,
+      filePath: savedPath,
+      syncFileName: syncFileName,
+    );
+
+    // Do NOT create a reading_progress row here — the engine treats a
+    // missing row as "not started" and defaults to (0, 0, defaultWpm) on
+    // first open. Creating it at import time would put every freshly
+    // imported book into the "In progress" section of the library.
+
+    state = state.copyWith(
+      status: ImportStatus.done,
+      importedBookId: bookId,
+    );
+
+    // Push new book to sync folder (will copy EPUB too if syncEpubs is on).
+    _ref.read(librarySyncProvider.notifier).schedulePush();
   }
 
   void reset() {

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/routing/app_router.dart';
+import 'core/share/desktop_drop_handler.dart';
 import 'core/share/share_intent_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'features/article_import/presentation/providers/article_import_provider.dart';
@@ -30,6 +31,8 @@ class RsvpReaderApp extends ConsumerWidget {
           darkTheme: AppTheme.build(brightness: Brightness.dark),
           themeMode: themeMode,
           routerConfig: appRouter,
+          builder: (context, child) =>
+              DesktopDropHandler(child: child ?? const SizedBox.shrink()),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

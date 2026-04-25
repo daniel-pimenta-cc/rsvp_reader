@@ -221,6 +221,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get switchToRsvpMode => 'RSVP mode';
 
   @override
+  String get hideLibraryPanel => 'Hide library';
+
+  @override
+  String get showLibraryPanel => 'Show library';
+
+  @override
   String get settingsFocusLine => 'Focus line';
 
   @override

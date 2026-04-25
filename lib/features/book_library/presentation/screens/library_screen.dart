@@ -139,13 +139,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     if (!masterDetail) return libraryContent;
 
     final selectedId = ref.watch(selectedBookIdProvider);
+    // The library can only be hidden while a book is open — there's nothing
+    // to fall back to otherwise.
+    final libraryVisible = selectedId == null
+        ? true
+        : ref.watch(libraryPanelVisibleProvider);
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: scheme.surface,
       body: Row(
         children: [
-          SizedBox(width: 440, child: libraryContent),
-          VerticalDivider(width: 1, color: scheme.outlineVariant),
+          if (libraryVisible) ...[
+            SizedBox(width: 440, child: libraryContent),
+            VerticalDivider(width: 1, color: scheme.outlineVariant),
+          ],
           Expanded(
             child: selectedId == null
                 ? const ReaderPlaceholder()
