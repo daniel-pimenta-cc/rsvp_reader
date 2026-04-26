@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -18,6 +19,12 @@ import 'features/rsvp_reader/presentation/providers/display_settings_provider.da
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load secrets (currently only the desktop OAuth credentials) before
+  // anything reads PlatformCapabilities.supportsDriveSync. The .env file
+  // is bundled as an asset; missing/empty is fine on platforms that
+  // don't need it.
+  await dotenv.load(fileName: '.env', isOptional: true);
 
   if (PlatformCapabilities.isMobile) {
     await SystemChrome.setPreferredOrientations([

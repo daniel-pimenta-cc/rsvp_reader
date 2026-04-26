@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Local secrets (OAuth client + secret for desktop Drive sync). Use
+# .env.example as the committed template.
+.env
+
 # Symbolication related
 app.*.symbols
 

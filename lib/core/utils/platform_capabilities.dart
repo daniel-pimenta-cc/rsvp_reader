@@ -2,6 +2,8 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 
+import '../../features/library_sync/data/auth/desktop_oauth_drive_auth_backend.dart';
+
 /// Static checks for platform-specific capabilities. Use these instead of
 /// scattering `Platform.isAndroid` / `Platform.isLinux` across the codebase.
 class PlatformCapabilities {
@@ -13,13 +15,16 @@ class PlatformCapabilities {
     return Platform.isAndroid || Platform.isIOS;
   }
 
-  /// Drive sync depends on `google_sign_in`, which only has a working
-  /// Android implementation in this project. iOS would need a provisioning
-  /// profile; desktop platforms need an OAuth loopback flow we haven't
-  /// built yet.
+  /// Drive sync. Android uses the native `google_sign_in` flow. Linux
+  /// uses an OAuth loopback flow against credentials baked in at build
+  /// time via --dart-define; if those weren't provided, the section is
+  /// hidden so we don't surface a button that can only error.
+  /// iOS would need a separate provisioning profile and is not wired up.
   static bool get supportsDriveSync {
     if (kIsWeb) return false;
-    return Platform.isAndroid;
+    if (Platform.isAndroid) return true;
+    if (Platform.isLinux) return desktopOAuthCredentialsConfigured;
+    return false;
   }
 
   static bool get isDesktop {

@@ -1,8 +1,16 @@
 # Library sync
 
 EPUBs + reading progress + display settings sincronizados via Google Drive.
-Android-only, opt-in, scope `drive.file` (o app so enxerga arquivos que ele
-proprio criou).
+Disponivel em Android (via `google_sign_in` nativo) e Linux desktop (via
+fluxo OAuth loopback — ver [linux-desktop.md](linux-desktop.md#google-drive-sync)).
+Opt-in, scope `drive.file` (o app so enxerga arquivos que ele proprio criou).
+
+A camada de auth é abstraída por `DriveAuthBackend`
+(`lib/features/library_sync/data/auth/`), com duas implementações concretas:
+`GoogleSignInDriveAuthBackend` (mobile) e `DesktopOAuthDriveAuthBackend`
+(desktop). Tudo abaixo de `DriveAuthNotifier` — incluindo o gateway, o sync
+service e o manifest — é idêntico entre as plataformas; só o `AuthClient`
+muda de fornecedor.
 
 ## Visao geral
 

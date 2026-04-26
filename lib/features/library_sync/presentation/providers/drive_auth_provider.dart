@@ -1,8 +1,10 @@
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart' as ga;
+
+import '../../../../core/utils/platform_capabilities.dart';
+import '../../data/auth/desktop_oauth_drive_auth_backend.dart';
+import '../../data/auth/drive_auth_backend.dart';
+import '../../data/auth/google_sign_in_drive_auth_backend.dart';
 
 class DriveAuthState {
   final bool isBusy;
@@ -34,11 +36,9 @@ class DriveAuthState {
 }
 
 class DriveAuthNotifier extends StateNotifier<DriveAuthState> {
-  final GoogleSignIn _google;
+  final DriveAuthBackend _backend;
 
-  DriveAuthNotifier()
-      : _google = GoogleSignIn(scopes: const [drive.DriveApi.driveFileScope]),
-        super(const DriveAuthState());
+  DriveAuthNotifier(this._backend) : super(const DriveAuthState());
 
   /// Attempt a silent sign-in using cached credentials. Safe to call on
   /// every app launch — returns false if there's no cached account or
@@ -46,26 +46,27 @@ class DriveAuthNotifier extends StateNotifier<DriveAuthState> {
   Future<bool> trySilentSignIn() async {
     state = state.copyWith(isBusy: true, clearError: true);
     try {
-      final account = await _google.signInSilently(suppressErrors: true);
-      state = DriveAuthState(email: account?.email);
-      return account != null;
+      final result = await _backend.trySilentSignIn();
+      state = DriveAuthState(email: result?.email);
+      return result != null;
     } catch (e) {
       state = DriveAuthState(errorMessage: e.toString());
       return false;
     }
   }
 
-  /// Interactive sign-in. Shows the account chooser.
+  /// Interactive sign-in. Shows the account chooser (mobile) or opens
+  /// the system browser (desktop).
   Future<bool> signIn() async {
     state = state.copyWith(isBusy: true, clearError: true);
     try {
-      final account = await _google.signIn();
-      if (account == null) {
+      final result = await _backend.signIn();
+      if (result == null) {
         // user cancelled
         state = const DriveAuthState();
         return false;
       }
-      state = DriveAuthState(email: account.email);
+      state = DriveAuthState(email: result.email);
       return true;
     } catch (e) {
       state = DriveAuthState(errorMessage: e.toString());
@@ -75,7 +76,7 @@ class DriveAuthNotifier extends StateNotifier<DriveAuthState> {
 
   Future<void> signOut() async {
     try {
-      await _google.signOut();
+      await _backend.signOut();
     } finally {
       state = const DriveAuthState();
     }
@@ -86,11 +87,20 @@ class DriveAuthNotifier extends StateNotifier<DriveAuthState> {
   ///
   /// The client handles token refresh automatically. Close it when done.
   Future<ga.AuthClient?> authenticatedClient() {
-    return _google.authenticatedClient();
+    return _backend.authenticatedClient();
   }
 }
 
+/// Picks the auth backend per platform. Override in tests with
+/// `driveAuthBackendProvider.overrideWith((ref) => FakeBackend())`.
+final driveAuthBackendProvider = Provider<DriveAuthBackend>((ref) {
+  if (PlatformCapabilities.isDesktop) {
+    return DesktopOAuthDriveAuthBackend();
+  }
+  return GoogleSignInDriveAuthBackend();
+});
+
 final driveAuthProvider =
     StateNotifierProvider<DriveAuthNotifier, DriveAuthState>((ref) {
-  return DriveAuthNotifier();
+  return DriveAuthNotifier(ref.watch(driveAuthBackendProvider));
 });
