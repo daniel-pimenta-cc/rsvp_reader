@@ -42,6 +42,8 @@ class RsvpReaderScreen extends ConsumerStatefulWidget {
 
 class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     with TickerProviderStateMixin {
+  final FocusNode _shortcutsFocusNode = FocusNode(debugLabel: 'RsvpShortcuts');
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +54,7 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
 
   @override
   void dispose() {
+    _shortcutsFocusNode.dispose();
     // Reset side-panel state so switching between books doesn't keep a
     // panel open for an unrelated book.
     Future.microtask(() {
@@ -130,35 +133,37 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
     RsvpEngineNotifier engine,
     Widget child,
   ) {
-    return Focus(
-      autofocus: true,
-      child: CallbackShortcuts(
-        bindings: <ShortcutActivator, VoidCallback>{
-          const SingleActivator(LogicalKeyboardKey.space): engine.togglePlayPause,
-          const SingleActivator(LogicalKeyboardKey.arrowRight):
-              () => engine.skipForward(1),
-          const SingleActivator(LogicalKeyboardKey.arrowLeft):
-              () => engine.skipBackward(1),
-          const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true):
-              () => engine.skipForward(AppConstants.skipWordCount),
-          const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true):
-              () => engine.skipBackward(AppConstants.skipWordCount),
-          const SingleActivator(LogicalKeyboardKey.arrowUp): engine.increaseWpm,
-          const SingleActivator(LogicalKeyboardKey.arrowDown): engine.decreaseWpm,
-          const SingleActivator(LogicalKeyboardKey.escape): () {
-            if (state.isPlaying) engine.pause();
-            if (widget.onClose != null) {
-              widget.onClose!();
-            } else if (mounted) {
-              context.pop();
-            }
-          },
-          if (widget.onClose != null)
-            const SingleActivator(LogicalKeyboardKey.keyB, control: true): () =>
-                ref
-                    .read(libraryPanelVisibleProvider.notifier)
-                    .update((v) => !v),
+    // CallbackShortcuts must be an ancestor of the focused Focus node:
+    // key events bubble up from the primary focus through its ancestors, and
+    // Shortcuts only fires when the event passes through it on the way up.
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.space): engine.togglePlayPause,
+        const SingleActivator(LogicalKeyboardKey.arrowRight):
+            () => engine.skipForward(1),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft):
+            () => engine.skipBackward(1),
+        const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true):
+            () => engine.skipForward(AppConstants.skipWordCount),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true):
+            () => engine.skipBackward(AppConstants.skipWordCount),
+        const SingleActivator(LogicalKeyboardKey.arrowUp): engine.increaseWpm,
+        const SingleActivator(LogicalKeyboardKey.arrowDown): engine.decreaseWpm,
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (state.isPlaying) engine.pause();
+          if (widget.onClose != null) {
+            widget.onClose!();
+          } else if (mounted) {
+            context.pop();
+          }
         },
+        if (widget.onClose != null)
+          const SingleActivator(LogicalKeyboardKey.keyB, control: true): () =>
+              ref.read(libraryPanelVisibleProvider.notifier).update((v) => !v),
+      },
+      child: Focus(
+        focusNode: _shortcutsFocusNode,
+        autofocus: true,
         child: child,
       ),
     );

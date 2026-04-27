@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart' as ga;
 
@@ -130,24 +129,14 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     if (parts.isEmpty) return null;
     final dirSegments = parts.sublist(0, parts.length - 1);
     final fileName = parts.last;
-    final resolveSw = Stopwatch()..start();
     final parentId = await _resolveFolder(api, folderPath, dirSegments);
-    final resolveMs = resolveSw.elapsedMilliseconds;
     if (parentId == null) return null;
-    int findMs = 0;
     String? fileId = _fileIdCache[_fileKey(parentId, fileName)];
     if (fileId == null) {
-      final findSw = Stopwatch()..start();
       final file = await _findFile(api, parentId, fileName);
-      findMs = findSw.elapsedMilliseconds;
-      if (file == null) {
-        debugPrint(
-            '[drive] readBytes "$relativePath" NOT FOUND resolve=${resolveMs}ms find=${findMs}ms');
-        return null;
-      }
+      if (file == null) return null;
       fileId = file.id!;
     }
-    final dlSw = Stopwatch()..start();
     final media = await api.files.get(
       fileId,
       downloadOptions: drive.DownloadOptions.fullMedia,
@@ -156,11 +145,7 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     await for (final chunk in media.stream) {
       builder.add(chunk);
     }
-    final bytes = builder.toBytes();
-    debugPrint(
-        '[drive] readBytes "$relativePath" ${bytes.length}B '
-        'resolve=${resolveMs}ms find=${findMs}ms dl=${dlSw.elapsedMilliseconds}ms');
-    return bytes;
+    return builder.toBytes();
   }
 
   @override
@@ -192,23 +177,17 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     }
     final dirSegments = parts.sublist(0, parts.length - 1);
     final fileName = parts.last;
-    final resolveSw = Stopwatch()..start();
     final parentId =
         await _resolveFolder(api, folderPath, dirSegments, create: true);
-    final resolveMs = resolveSw.elapsedMilliseconds;
     if (parentId == null) {
       throw StateError('Failed to resolve/create folder for $relativePath');
     }
-    int findMs = 0;
     String? existingId = _fileIdCache[_fileKey(parentId, fileName)];
     if (existingId == null) {
-      final findSw = Stopwatch()..start();
       final existing = await _findFile(api, parentId, fileName);
-      findMs = findSw.elapsedMilliseconds;
       existingId = existing?.id;
     }
     final media = drive.Media(Stream.value(bytes), bytes.length);
-    final opSw = Stopwatch()..start();
     if (existingId != null) {
       await api.files.update(
         drive.File()..name = fileName,
@@ -226,10 +205,6 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
         _fileIdCache[_fileKey(parentId, fileName)] = created.id!;
       }
     }
-    debugPrint(
-        '[drive] writeBytes "$relativePath" ${bytes.length}B '
-        'resolve=${resolveMs}ms find=${findMs}ms '
-        '${existingId != null ? 'update' : 'create'}=${opSw.elapsedMilliseconds}ms');
   }
 
   @override
@@ -275,17 +250,13 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
     final api = await _api();
     if (api == null) return const [];
     final parts = _split(relativePath);
-    final resolveSw = Stopwatch()..start();
     final parentId = await _resolveFolder(api, folderPath, parts);
-    final resolveMs = resolveSw.elapsedMilliseconds;
     if (parentId == null) return const [];
     final names = <String>[];
     String? pageToken;
-    int pages = 0;
     final q = "'${_esc(parentId)}' in parents "
         'and trashed=false '
         "and mimeType!='$_folderMime'";
-    final listSw = Stopwatch()..start();
     do {
       final res = await api.files.list(
         q: q,
@@ -293,7 +264,6 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
         $fields: 'nextPageToken,files(id,name)',
         pageSize: 200,
       );
-      pages++;
       for (final f in res.files ?? <drive.File>[]) {
         final name = f.name;
         if (name != null && name.isNotEmpty) {
@@ -305,9 +275,6 @@ class DriveSyncFolderGateway implements SyncFolderGateway {
       }
       pageToken = res.nextPageToken;
     } while (pageToken != null && pageToken.isNotEmpty);
-    debugPrint(
-        '[drive] listFiles "$relativePath" ${names.length} files '
-        'resolve=${resolveMs}ms list=${listSw.elapsedMilliseconds}ms pages=$pages');
     return names;
   }
 
