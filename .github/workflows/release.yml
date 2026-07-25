@@ -113,7 +113,10 @@ jobs:
           NOTES_FOUND: ${{ steps.notes.outputs.found }}
         run: |
           if [ "$NOTES_FOUND" = "true" ]; then
-            gh release create "$GITHUB_REF_NAME" ledor-* --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+            # --title is explicit here: unlike --generate-notes, --notes-file
+            # does not name the release, and an untitled one renders blank.
+            gh release create "$GITHUB_REF_NAME" ledor-* --repo "$GITHUB_REPOSITORY" \
+              --title "$GITHUB_REF_NAME" --notes-file notes.md
           else
             gh release create "$GITHUB_REF_NAME" ledor-* --repo "$GITHUB_REPOSITORY" --generate-notes
           fi
