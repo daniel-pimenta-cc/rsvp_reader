@@ -35,22 +35,30 @@ class CategorizedBooks {
 /// filter in [categorizedLibraryProvider] and the empty-state copy.
 enum LibraryKind { books, articles }
 
+/// Stream of every reading_progress row. Watched (not just read) because
+/// sync applies remote progress without necessarily touching `books` — when
+/// the merged `lastReadAt` already matches the local one, the books stream
+/// never fires and the library tiles would keep showing the stale percentage.
+final readingProgressStreamProvider =
+    StreamProvider<List<ReadingProgressTableData>>((ref) {
+  return ref.watch(readingProgressDaoProvider).watchAllProgress();
+});
+
 /// Progress fraction per book across the whole library, computed in two DB
 /// queries (one for all progress rows, one for all chapter word counts)
 /// instead of N+1. Every library tile and the categorized tabs derive from
 /// this, so closing the reader re-runs O(1) queries instead of O(N).
 final libraryProgressProvider =
     FutureProvider<Map<String, double>>((ref) async {
-  final books = await ref.watch(bookLibraryProvider.future);
-  final progressDao = ref.read(readingProgressDaoProvider);
+  // Both watches happen before any await so the queries still overlap.
+  final booksFuture = ref.watch(bookLibraryProvider.future);
+  final progressFuture = ref.watch(readingProgressStreamProvider.future);
   final tokensDao = ref.read(cachedTokensDaoProvider);
+  final countsFuture = tokensDao.getAllChapterWordCounts();
 
-  final results = await Future.wait([
-    progressDao.getAllProgress(),
-    tokensDao.getAllChapterWordCounts(),
-  ]);
-  final progressRows = results[0] as List<ReadingProgressTableData>;
-  final chapterCounts = results[1] as List<ChapterWordCount>;
+  final books = await booksFuture;
+  final progressRows = await progressFuture;
+  final chapterCounts = await countsFuture;
 
   final progressByBook = {for (final p in progressRows) p.bookId: p};
   final chaptersByBook = <String, List<ChapterWordCount>>{};
