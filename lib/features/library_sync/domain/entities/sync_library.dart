@@ -13,6 +13,17 @@ class SyncLibraryProgress {
   final int wpm;
   final DateTime updatedAt;
 
+  /// Book-global word cursor, and the field peers should actually use.
+  ///
+  /// [chapterIndex]/[wordIndex] only mean something inside the tokenization
+  /// that produced them: the same EPUB parsed by a newer build can split
+  /// into a different number of chapters, so the pair points somewhere else
+  /// on a device that imported it later. The global cursor survives that
+  /// (it only shifts by however many tokens the split added). Null for rows
+  /// written by builds before this field existed — readers fall back to the
+  /// pair.
+  final int? globalWordIndex;
+
   /// Persisted reader-mode tag (`'rsvp'` / `'ereader'` / `'tts'`). Null
   /// for rows that predate the schema bump or never had a mode selected
   /// — the local engine treats null as "default" (scroll/RSVP).
@@ -23,6 +34,7 @@ class SyncLibraryProgress {
     required this.wordIndex,
     required this.wpm,
     required this.updatedAt,
+    this.globalWordIndex,
     this.readerMode,
   });
 
@@ -31,6 +43,7 @@ class SyncLibraryProgress {
         'wordIndex': wordIndex,
         'wpm': wpm,
         'updatedAt': updatedAt.toUtc().toIso8601String(),
+        if (globalWordIndex != null) 'globalWordIndex': globalWordIndex,
         if (readerMode != null) 'readerMode': readerMode,
       };
 
@@ -40,6 +53,7 @@ class SyncLibraryProgress {
         wordIndex: json['wordIndex'] as int,
         wpm: json['wpm'] as int,
         updatedAt: DateTime.parse(json['updatedAt'] as String),
+        globalWordIndex: (json['globalWordIndex'] as num?)?.toInt(),
         readerMode: json['readerMode'] as String?,
       );
 }
@@ -272,14 +286,20 @@ SyncLibraryProgress? mergeProgress(
 
   final diff = a.updatedAt.difference(b.updatedAt).abs();
   if (diff.inSeconds <= 60) {
-    return _globalOrder(a) >= _globalOrder(b) ? a : b;
+    // Both orderings must be on the same scale, so the real cursor is only
+    // used when both sides carry one.
+    final ag = a.globalWordIndex;
+    final bg = b.globalWordIndex;
+    if (ag != null && bg != null) return ag >= bg ? a : b;
+    return _chapterOrder(a) >= _chapterOrder(b) ? a : b;
   }
   return a.updatedAt.isAfter(b.updatedAt) ? a : b;
 }
 
 /// Orders progress records without knowledge of chapter word counts:
-/// chapterIndex dominates, wordIndex breaks ties.
-int _globalOrder(SyncLibraryProgress p) => p.chapterIndex * 1000000 + p.wordIndex;
+/// chapterIndex dominates, wordIndex breaks ties. Only a fallback now —
+/// [SyncLibraryProgress.globalWordIndex] is exact where both sides have it.
+int _chapterOrder(SyncLibraryProgress p) => p.chapterIndex * 1000000 + p.wordIndex;
 
 DateTime _earlier(DateTime a, DateTime b) => a.isBefore(b) ? a : b;
 DateTime _later(DateTime a, DateTime b) => a.isAfter(b) ? a : b;
