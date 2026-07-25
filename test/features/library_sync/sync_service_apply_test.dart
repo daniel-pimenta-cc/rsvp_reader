@@ -518,4 +518,76 @@ void main() {
     expect(updates, isEmpty,
         reason: 'an unchanged book must not produce DB writes on re-sync');
   });
+
+  // -------------------------------------------------------------------------
+  // Cross-tokenization progress. The peer that wrote the remote row imported
+  // the same EPUB under an older parser, which split it into fewer chapters:
+  // its `chapter 8` is our `chapter 11`. Applying the raw pair would drop the
+  // reader ~11% earlier in the book, so the global cursor is what must win.
+  // -------------------------------------------------------------------------
+  // Local split — three leading sections the older parser didn't emit.
+  const localSplit = [1, 1, 59, 20, 55, 675, 252, 888, 2, 5, 11131, 25052];
+
+  test('remote progress is re-anchored onto the local chapter split', () async {
+    await h.seedLocalBook(id: 'book-1', syncFileName: 'book-1.epub');
+    await h.seedLocalChapters('book-1', localSplit);
+    await h.seedLocalProgress(
+      bookId: 'book-1',
+      wordIndex: 0,
+      updatedAt: DateTime(2026, 1, 1),
+    );
+    h.putBooksShard([
+      h.makeRemoteBook(
+        id: 'book-1',
+        syncFileName: 'book-1.epub',
+        updatedAt: DateTime.utc(2026, 2, 1),
+        progress: SyncLibraryProgress(
+          // Chapter 8 of the *remote* split, which is word 18022 overall.
+          chapterIndex: 8,
+          wordIndex: 4940,
+          wpm: 300,
+          updatedAt: DateTime.utc(2026, 2, 1, 10),
+          globalWordIndex: 18022,
+        ),
+      ),
+    ]);
+
+    await h.runSync();
+
+    final p = await h.db.readingProgressDao.getProgressForBook('book-1');
+    // 13089 words precede chapter 11 locally: 18022 - 13089 = 4933.
+    expect(p!.chapterIndex, 11);
+    expect(p.wordIndex, 4933);
+  });
+
+  test('remote progress without a global cursor still applies verbatim',
+      () async {
+    // Rows written by builds that predate globalWordIndex must keep working.
+    await h.seedLocalBook(id: 'book-1', syncFileName: 'book-1.epub');
+    await h.seedLocalChapters('book-1', localSplit);
+    await h.seedLocalProgress(
+      bookId: 'book-1',
+      wordIndex: 0,
+      updatedAt: DateTime(2026, 1, 1),
+    );
+    h.putBooksShard([
+      h.makeRemoteBook(
+        id: 'book-1',
+        syncFileName: 'book-1.epub',
+        updatedAt: DateTime.utc(2026, 2, 1),
+        progress: SyncLibraryProgress(
+          chapterIndex: 8,
+          wordIndex: 4940,
+          wpm: 300,
+          updatedAt: DateTime.utc(2026, 2, 1, 10),
+        ),
+      ),
+    ]);
+
+    await h.runSync();
+
+    final p = await h.db.readingProgressDao.getProgressForBook('book-1');
+    expect(p!.chapterIndex, 8);
+    expect(p.wordIndex, 4940);
+  });
 }

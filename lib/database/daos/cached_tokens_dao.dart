@@ -70,6 +70,18 @@ class CachedTokensDao extends DatabaseAccessor<AppDatabase>
     return row?.read(sumExpr) ?? 0;
   }
 
+  /// Word count of every chapter of [bookId], ordered by chapter index —
+  /// the shape the global-cursor conversions in `progress_index.dart` take.
+  /// Selects only index-covered columns so the token blobs stay unread.
+  Future<List<int>> getChapterWordCounts(String bookId) async {
+    final query = selectOnly(cachedTokensTable)
+      ..addColumns([cachedTokensTable.chapterIndex, cachedTokensTable.wordCount])
+      ..where(cachedTokensTable.bookId.equals(bookId))
+      ..orderBy([OrderingTerm.asc(cachedTokensTable.chapterIndex)]);
+    final rows = await query.get();
+    return [for (final r in rows) r.read(cachedTokensTable.wordCount)!];
+  }
+
   /// Returns `(bookId, chapterIndex, wordCount)` for every chapter across the
   /// whole library in one query, skipping the heavy `tokensJson` blob.
   /// Callers aggregate in Dart to avoid N+1 queries when computing per-book

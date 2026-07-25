@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/progress_index.dart';
 import '../../../../database/app_database.dart';
 import '../../../../database/daos/bookmarks_dao.dart';
 import '../../../../database/daos/books_dao.dart';
@@ -392,9 +393,11 @@ class LibrarySyncService {
     final books = (await _booksDao.getAllBooks())
         .where((b) => b.source == BookSource.epub)
         .toList();
+    final chapterWordCounts = await _chapterWordCountsByBook();
     final bookRows = <SyncLibraryBook>[];
     for (final book in books) {
       final progress = await _progressDao.getProgressForBook(book.id);
+      final counts = chapterWordCounts[book.id] ?? const <int>[];
       bookRows.add(SyncLibraryBook(
         id: book.id,
         title: book.title,
@@ -412,6 +415,11 @@ class LibrarySyncService {
                 wordIndex: progress.wordIndex,
                 wpm: progress.wpm,
                 updatedAt: progress.updatedAt,
+                globalWordIndex: localToGlobalWordIndex(
+                  counts,
+                  progress.chapterIndex,
+                  progress.wordIndex,
+                ),
                 readerMode: progress.readerMode,
               ),
         deletedAt: null,
@@ -537,8 +545,7 @@ class LibrarySyncService {
         final progressDiffers = remoteProg != null &&
             (localProg == null ||
                 !remoteProg.updatedAt.isAtSameMomentAs(localProg.updatedAt) ||
-                remoteProg.wordIndex != localProg.wordIndex ||
-                remoteProg.chapterIndex != localProg.chapterIndex ||
+                !_sameCursor(remoteProg, localProg) ||
                 remoteProg.readerMode != localProg.readerMode);
         if (progressDiffers) {
           await _applyRemoteProgress(book.id, remoteProg);
@@ -674,11 +681,58 @@ class LibrarySyncService {
     }
   }
 
-  Future<void> _applyRemoteProgress(String bookId, SyncLibraryProgress p) {
-    return _progressDao.upsertProgress(ReadingProgressTableCompanion(
+  /// Whether two progress rows point at the same word. Compares the global
+  /// cursor whenever both sides carry one — the local and remote
+  /// `(chapterIndex, wordIndex)` pairs legitimately differ when the two
+  /// devices split the book into different chapters, and comparing the pair
+  /// there would re-write the same position on every sync.
+  bool _sameCursor(SyncLibraryProgress a, SyncLibraryProgress b) {
+    if (a.globalWordIndex != null && b.globalWordIndex != null) {
+      return a.globalWordIndex == b.globalWordIndex;
+    }
+    return a.chapterIndex == b.chapterIndex && a.wordIndex == b.wordIndex;
+  }
+
+  /// Chapter word counts for every book, keyed by id and ordered by chapter
+  /// index. One query for the whole library — the per-book conversions below
+  /// would otherwise be N+1.
+  Future<Map<String, List<int>>> _chapterWordCountsByBook() async {
+    final rows = await _tokensDao.getAllChapterWordCounts();
+    final byBook = <String, List<ChapterWordCount>>{};
+    for (final row in rows) {
+      byBook.putIfAbsent(row.bookId, () => []).add(row);
+    }
+    return {
+      for (final entry in byBook.entries)
+        entry.key: (entry.value
+              ..sort((a, b) => a.chapterIndex.compareTo(b.chapterIndex)))
+            .map((r) => r.wordCount)
+            .toList(),
+    };
+  }
+
+  /// Writes remote progress against the *local* tokenization.
+  ///
+  /// The peer's `(chapterIndex, wordIndex)` is only meaningful against the
+  /// chapter split it parsed; a device that imported the same EPUB under a
+  /// different parser build splits it differently, and the raw pair then
+  /// points somewhere else entirely. Re-anchoring through the global cursor
+  /// keeps both devices on the same word. Rows from builds that predate
+  /// [SyncLibraryProgress.globalWordIndex] still fall back to the pair.
+  Future<void> _applyRemoteProgress(String bookId, SyncLibraryProgress p) async {
+    var chapterIndex = p.chapterIndex;
+    var wordIndex = p.wordIndex;
+    final global = p.globalWordIndex;
+    if (global != null) {
+      final counts = await _tokensDao.getChapterWordCounts(bookId);
+      if (counts.isNotEmpty) {
+        (chapterIndex, wordIndex) = globalToLocalWordIndex(counts, global);
+      }
+    }
+    await _progressDao.upsertProgress(ReadingProgressTableCompanion(
       bookId: Value(bookId),
-      chapterIndex: Value(p.chapterIndex),
-      wordIndex: Value(p.wordIndex),
+      chapterIndex: Value(chapterIndex),
+      wordIndex: Value(wordIndex),
       wpm: Value(p.wpm),
       updatedAt: Value(p.updatedAt),
       readerMode: Value(p.readerMode),

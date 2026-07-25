@@ -272,6 +272,23 @@ class SyncServiceHarness {
     ));
   }
 
+  /// Seeds the token cache with a specific chapter split. The blobs are
+  /// throwaway — only the per-chapter wordCount matters to the global-cursor
+  /// conversions, which is what callers of this are exercising.
+  Future<void> seedLocalChapters(String bookId, List<int> wordCounts) async {
+    for (var i = 0; i < wordCounts.length; i++) {
+      await db.cachedTokensDao.insertChapterTokens(
+        CachedTokensTableCompanion.insert(
+          bookId: bookId,
+          chapterIndex: i,
+          chapterTitle: Value('Chapter $i'),
+          tokensJson: '[]',
+          wordCount: wordCounts[i],
+        ),
+      );
+    }
+  }
+
   Future<void> seedLocalBookmark({
     required String id,
     required String bookId,
