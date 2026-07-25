@@ -20,6 +20,10 @@ class ReadingProgressDao extends DatabaseAccessor<AppDatabase>
     return select(readingProgressTable).get();
   }
 
+  Stream<List<ReadingProgressTableData>> watchAllProgress() {
+    return select(readingProgressTable).watch();
+  }
+
   Future<void> upsertProgress(ReadingProgressTableCompanion progress) {
     return into(readingProgressTable).insertOnConflictUpdate(progress);
   }

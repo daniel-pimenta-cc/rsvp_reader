@@ -140,6 +140,25 @@ void main() {
       await setProgress(id, 0, 999);
       expect((await progressMap())[id], 1.0);
     });
+
+    test('recomputes when only reading_progress changes', () async {
+      // Sync applies remote progress without always writing to `books` (the
+      // merged lastReadAt can already match the local one). No invalidate
+      // here on purpose: the provider must react on its own.
+      final id = await persist(_bookWithChapters('b', [10, 10]));
+      final sub = container.listen(libraryProgressProvider, (_, _) {});
+      addTearDown(sub.close);
+      expect((await container.read(libraryProgressProvider.future))[id], 0.0);
+
+      await setProgress(id, 1, 5); // 10 + 5 = 15/20
+
+      var value = 0.0;
+      for (var i = 0; i < 50 && value == 0.0; i++) {
+        await pumpEventQueue();
+        value = (await container.read(libraryProgressProvider.future))[id]!;
+      }
+      expect(value, closeTo(0.75, 1e-9));
+    });
   });
 
   group('categorizedLibraryProvider', () {
