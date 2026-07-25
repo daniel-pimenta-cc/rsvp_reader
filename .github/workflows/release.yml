@@ -85,10 +85,35 @@ jobs:
     needs: [android, linux]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+      # Release notes come from the CHANGELOG section whose heading matches the
+      # tag, so what ships is what we wrote. Falls back to --generate-notes when
+      # the tag has no section (nothing blocks a release over notes).
+      - name: Extract release notes
+        id: notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { grab = 1; next }
+            grab && /^## \[/ { exit }
+            grab { print }
+          ' CHANGELOG.md > notes.md
+          if [ -s notes.md ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::no CHANGELOG section for $version, using generated notes"
+          fi
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" ledor-* --repo "$GITHUB_REPOSITORY" --generate-notes
+          NOTES_FOUND: ${{ steps.notes.outputs.found }}
+        run: |
+          if [ "$NOTES_FOUND" = "true" ]; then
+            gh release create "$GITHUB_REF_NAME" ledor-* --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" ledor-* --repo "$GITHUB_REPOSITORY" --generate-notes
+          fi
