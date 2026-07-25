@@ -244,7 +244,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapToResume => 'Tap to resume';
 
   @override
-  String get readerModeMenuTooltip => 'Reading mode';
+  String get readerModeTooltip => 'Reading mode';
 
   @override
   String get readerModeRsvp => 'RSVP';
@@ -253,7 +253,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerModeEreader => 'E-reader';
 
   @override
-  String get readerModeTts => 'Text-to-speech';
+  String get readerModeTts => 'Audio';
+
+  @override
+  String get chaptersTitle => 'Chapters';
+
+  @override
+  String get settingsAllSettings => 'All settings';
 
   @override
   String get lockHighlight => 'Lock focused word';

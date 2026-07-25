@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../domain/entities/display_settings.dart';
 import '../../domain/entities/rsvp_state.dart';
 
+/// Dock status line: progress, time remaining, and the chapter counter that
+/// opens the chapter list. The chapter *title* used to sit above this row
+/// too — it now lives in the top bar (where it doubles as the chapter
+/// button) instead of being printed twice on the same screen.
 class ControlsProgressRow extends StatelessWidget {
   final RsvpState state;
   final AppLocalizations l10n;
@@ -21,6 +26,19 @@ class ControlsProgressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = state.displaySettings;
     final muted = settings.wordColor.withAlpha(140);
+    final labelStyle = TextStyle(
+      color: muted,
+      fontSize: 11,
+      fontFeatures: const [FontFeature.tabularFigures()],
+      letterSpacing: 0.4,
+    );
+    final timeLabel = switch (settings.timeRemainingMode) {
+      TimeRemainingMode.total =>
+        l10n.minutesRemaining(state.estimatedMinutesRemaining),
+      TimeRemainingMode.chapter =>
+        l10n.minutesRemaining(state.chapterMinutesRemaining),
+      TimeRemainingMode.off => null,
+    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
       child: Row(
@@ -28,13 +46,9 @@ class ControlsProgressRow extends StatelessWidget {
         children: [
           Text(
             l10n.progressPercent((state.progress * 100).round()),
-            style: TextStyle(
-              color: muted,
-              fontSize: 11,
-              fontFeatures: const [FontFeature.tabularFigures()],
-              letterSpacing: 0.4,
-            ),
+            style: labelStyle,
           ),
+          if (timeLabel != null) Text(timeLabel, style: labelStyle),
           if (state.chapters.isNotEmpty)
             InkWell(
               borderRadius: AppRadius.borderSm,
@@ -52,12 +66,7 @@ class ControlsProgressRow extends StatelessWidget {
                         state.currentChapterIndex + 1,
                         state.chapters.length,
                       ),
-                      style: TextStyle(
-                        color: muted,
-                        fontSize: 11,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                        letterSpacing: 0.4,
-                      ),
+                      style: labelStyle,
                     ),
                     const SizedBox(width: 4),
                     Icon(

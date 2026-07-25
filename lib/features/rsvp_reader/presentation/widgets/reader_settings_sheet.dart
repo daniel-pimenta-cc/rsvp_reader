@@ -6,7 +6,9 @@ import 'display_settings_panel.dart';
 import 'finish_book_button.dart';
 import 'reader_sheet_shell.dart';
 
-/// Bottom sheet wrapper around [DisplaySettingsPanel], shown from the reader.
+/// Bottom sheet wrapper around the compact [DisplaySettingsPanel], shown from
+/// the reader. Only the settings that affect the mode you're reading in; the
+/// rest is one tap away in the full-screen page.
 class ReaderSettingsSheet extends ConsumerWidget {
   final String bookId;
 
@@ -18,7 +20,7 @@ class ReaderSettingsSheet extends ConsumerWidget {
 
     return ReaderSheetShell(
       settings: settings,
-      initialChildSize: 0.55,
+      initialChildSize: 0.5,
       minChildSize: 0.3,
       maxChildSize: 0.9,
       showDivider: false,
@@ -28,8 +30,13 @@ class ReaderSettingsSheet extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
           child: Column(
             children: [
-              DisplaySettingsPanel(bookId: bookId),
-              const SizedBox(height: 24),
+              DisplaySettingsPanel(bookId: bookId, compact: true),
+              const SizedBox(height: 12),
+              AllSettingsLink(
+                settings: settings,
+                onBeforeNavigate: () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(height: 16),
               FinishBookButton(
                 bookId: bookId,
                 settings: settings,

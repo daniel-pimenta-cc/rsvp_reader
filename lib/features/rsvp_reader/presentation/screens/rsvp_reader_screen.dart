@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routing/selected_book_provider.dart';
 import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../core/utils/bookmark_snippet.dart';
@@ -19,8 +21,9 @@ import '../providers/reader_side_panel_provider.dart';
 import '../providers/rsvp_engine_provider.dart';
 import '../widgets/bookmark_create_dialog.dart';
 import '../widgets/bookmarks_list_sheet.dart';
+import '../widgets/chapter_list_sheet.dart';
 import '../widgets/context_scroll_view.dart';
-import '../widgets/reader_mode_menu.dart';
+import '../widgets/reader_mode_fab.dart';
 import '../widgets/reader_settings_sheet.dart';
 import '../widgets/reader_side_panel.dart';
 import '../widgets/rsvp_controls.dart';
@@ -99,6 +102,25 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
   bool _useSidePanel(BuildContext context) =>
       context.isTablet && context.isLandscape;
 
+  /// Set while the user scrolls the flowing-text views downward. Kept in the
+  /// screen (not the scroll view) because the switcher floats over every
+  /// mode, including RSVP, which has nothing to scroll.
+  bool _modeFabHiddenByScroll = false;
+
+  void _setModeFabHidden(bool hidden) {
+    if (_modeFabHiddenByScroll == hidden) return;
+    setState(() => _modeFabHiddenByScroll = hidden);
+  }
+
+  bool _isModeFabVisible(RsvpState state) {
+    // Playing means reading, not fiddling with modes.
+    if (state.isPlaying) return false;
+    // The scroll-hide only applies where there *is* a scroll view — in RSVP
+    // a stale hidden flag would leave no way to switch modes at all.
+    if (state.mode == ReaderMode.rsvp) return true;
+    return !_modeFabHiddenByScroll;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(rsvpEngineProvider(widget.bookId));
@@ -171,11 +193,37 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
         children: [
           _buildTopBar(state, engine),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: AppDurations.slow,
-              switchInCurve: AppCurves.standard,
-              switchOutCurve: AppCurves.standard,
-              child: _buildModeArea(state, engine),
+            child: NotificationListener<UserScrollNotification>(
+              // Reading down hides the mode switcher, reading back up brings
+              // it in — the same reflex as a browser's address bar. Only
+              // user-driven scrolls report a direction, so the engine's own
+              // auto-scroll never triggers it.
+              onNotification: (notification) {
+                if (notification.direction == ScrollDirection.reverse) {
+                  _setModeFabHidden(true);
+                } else if (notification.direction == ScrollDirection.forward) {
+                  _setModeFabHidden(false);
+                }
+                return false;
+              },
+              child: Stack(
+                children: [
+                  AnimatedSwitcher(
+                    duration: AppDurations.slow,
+                    switchInCurve: AppCurves.standard,
+                    switchOutCurve: AppCurves.standard,
+                    child: _buildModeArea(state, engine),
+                  ),
+                  Positioned(
+                    left: AppSpacing.md,
+                    bottom: AppSpacing.md,
+                    child: ReaderModeFab(
+                      bookId: widget.bookId,
+                      visible: _isModeFabVisible(state),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           if (state.mode != ReaderMode.ereader)
@@ -488,18 +536,17 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
               ),
             ),
           Expanded(
-            child: Text(
-              state.currentChapterTitle ?? '',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: state.displaySettings.wordColor.withAlpha(200),
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.1,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
+            child: _ChapterTitleButton(
+              title: state.currentChapterTitle ?? '',
+              // A single-chapter book (every imported article) has nothing
+              // to navigate to — render the title as plain text there.
+              onTap: state.chapters.length > 1
+                  ? () => openChapterList(context, ref, widget.bookId)
+                  : null,
+              color: state.displaySettings.wordColor,
+              style: theme.textTheme.titleSmall,
             ),
           ),
-          ReaderModeMenu(bookId: widget.bookId),
           IconButton(
             onPressed: () => _openBookmarks(state, engine),
             tooltip: l10n.bookmarksTooltip,
@@ -514,6 +561,60 @@ class _RsvpReaderScreenState extends ConsumerState<RsvpReaderScreen>
                 Icon(Icons.tune, color: state.displaySettings.wordColor),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The chapter title in the top bar, doubling as the entry point to the
+/// chapter list. Before, the only way in was a 14px glyph inside the dock —
+/// which e-reader mode hides entirely, leaving that mode with no chapter
+/// navigation at all.
+class _ChapterTitleButton extends StatelessWidget {
+  final String title;
+  final VoidCallback? onTap;
+  final Color color;
+  final TextStyle? style;
+
+  const _ChapterTitleButton({
+    required this.title,
+    required this.onTap,
+    required this.color,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = Text(
+      title,
+      style: style?.copyWith(
+        color: color.withAlpha(200),
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+      ),
+      textAlign: TextAlign.center,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    if (onTap == null) return label;
+
+    return InkWell(
+      borderRadius: AppRadius.borderMd,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: label),
+            const SizedBox(width: 2),
+            Icon(Icons.expand_more, size: 18, color: color.withAlpha(160)),
+          ],
+        ),
       ),
     );
   }

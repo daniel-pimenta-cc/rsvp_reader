@@ -524,11 +524,11 @@ abstract class AppLocalizations {
   /// **'Tap to resume'**
   String get tapToResume;
 
-  /// No description provided for @readerModeMenuTooltip.
+  /// No description provided for @readerModeTooltip.
   ///
   /// In en, this message translates to:
   /// **'Reading mode'**
-  String get readerModeMenuTooltip;
+  String get readerModeTooltip;
 
   /// No description provided for @readerModeRsvp.
   ///
@@ -545,8 +545,20 @@ abstract class AppLocalizations {
   /// No description provided for @readerModeTts.
   ///
   /// In en, this message translates to:
-  /// **'Text-to-speech'**
+  /// **'Audio'**
   String get readerModeTts;
+
+  /// No description provided for @chaptersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get chaptersTitle;
+
+  /// No description provided for @settingsAllSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'All settings'**
+  String get settingsAllSettings;
 
   /// No description provided for @lockHighlight.
   ///

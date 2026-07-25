@@ -88,8 +88,7 @@ Core feature. Widgets organised into focused files:
 **Controls (dock):**
 - `RsvpControls` — compositor. `AnimatedSize` on the column so it grows when the WPM drawer opens.
 - `ControlsShell` — translucent surface with backdrop blur and a top border.
-- `ControlsMetaRow` — chapter title + remaining time (tabular figures).
-- `ControlsProgressRow` — percentage + chapter navigation.
+- `ControlsProgressRow` — percentage, remaining time (tabular figures) and the chapter counter, which opens the chapter list. The chapter *title* lives in the top bar, where it doubles as the chapter button.
 - `ControlsTransportRow` — play 64px with `AnimatedSwitcher` (scale+fade), skips 48px, `WpmCapsule`. Layout: `LayoutBuilder` with a 520px breakpoint — `Stack` (inline, WPM on the right) on wide screens, `Column` (stacked) on narrow ones.
 - `SeekSlider` — slider with chapter markers (visual-only via `IgnorePointer`), value indicator with the chapter title.
 

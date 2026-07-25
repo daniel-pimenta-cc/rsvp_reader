@@ -84,6 +84,49 @@ void main() {
     });
   });
 
+  group('quickCategoriesFor', () {
+    test('only lists categories that affect the active mode', () {
+      for (final mode in ReaderMode.values) {
+        for (final category in quickCategoriesFor(mode)) {
+          expect(isCategoryActiveFor(category, mode), isTrue,
+              reason: '$category is inert in $mode — it should not be in the '
+                  'reader sheet');
+        }
+      }
+    });
+
+    test('never lists chrome — set-once plumbing lives in full settings', () {
+      for (final mode in ReaderMode.values) {
+        expect(quickCategoriesFor(mode), isNot(contains(SettingsCategory.chrome)));
+      }
+    });
+
+    test('e-reader collapses to the flowing-text categories', () {
+      expect(quickCategoriesFor(ReaderMode.ereader), [
+        SettingsCategory.readerView,
+        SettingsCategory.typography,
+      ]);
+    });
+
+    test('TTS leads with audio, RSVP leads with speed', () {
+      expect(quickCategoriesFor(ReaderMode.tts).first, SettingsCategory.audio);
+      expect(quickCategoriesFor(ReaderMode.rsvp).first,
+          SettingsCategory.speedTiming);
+    });
+
+    test('keeps the order the full panel would use', () {
+      for (final mode in ReaderMode.values) {
+        final quick = quickCategoriesFor(mode);
+        final full = orderedCategoriesFor(mode);
+        expect(
+          quick,
+          full.where(quick.contains).toList(),
+          reason: 'ordering diverged for $mode',
+        );
+      }
+    });
+  });
+
   group('isCategoryActiveFor', () {
     test('null mode marks no category as active', () {
       for (final c in SettingsCategory.values) {

@@ -51,10 +51,10 @@ enum SettingsScope {
   allModes,
 
   /// Modes that host the [RsvpControls] transport dock — RSVP, scroll, and
-  /// TTS. E-reader intentionally hides the dock (a "naked" reading mode),
-  /// so the settings that only live inside the dock (progress slider,
-  /// time-remaining badge) are inert there even though they're technically
-  /// available to edit.
+  /// TTS. E-reader keeps only the mode switcher from the dock (a "naked"
+  /// reading mode), so the settings that live in the rest of it (progress
+  /// slider, time-remaining badge) are inert there even though they're
+  /// technically available to edit.
   controlsModes,
 }
 
@@ -126,6 +126,20 @@ List<SettingsCategory> orderedCategoriesFor(ReaderMode? mode) {
         SettingsCategory.rsvpDisplay,
       ];
   }
+}
+
+/// The categories the reader's compact settings panel shows for [mode]: the
+/// ones whose settings visibly affect what the user is looking at right now,
+/// in the same order [orderedCategoriesFor] would use.
+///
+/// Chrome is excluded even in the modes where it applies — the progress
+/// slider and time-remaining badge are set-once plumbing, not something you
+/// reach for mid-chapter. It stays in the full-screen page.
+List<SettingsCategory> quickCategoriesFor(ReaderMode mode) {
+  return orderedCategoriesFor(mode)
+      .where((c) =>
+          c != SettingsCategory.chrome && isCategoryActiveFor(c, mode))
+      .toList();
 }
 
 /// `true` when the category has visible effect in [mode] — i.e. when its

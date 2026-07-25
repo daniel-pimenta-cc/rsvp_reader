@@ -21,12 +21,18 @@ class SettingsSectionHeader extends StatelessWidget {
   final Color orpColor;
   final bool isActive;
 
+  /// Whether to render the scope chip. The compact panel only shows sections
+  /// that apply to the current mode, so the chip there would repeat the same
+  /// answer on every header.
+  final bool showScope;
+
   const SettingsSectionHeader({
     required this.category,
     required this.label,
     required this.wordColor,
     required this.orpColor,
     this.isActive = false,
+    this.showScope = true,
     super.key,
   });
 
@@ -71,14 +77,16 @@ class SettingsSectionHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          _ScopeChip(
-            wordColor: wordColor,
-            orpColor: orpColor,
-            filled: isActive,
-            label: _scopeLabel(l10n, category.scope),
-            tooltip: _scopeTooltip(l10n, category.scope),
-          ),
+          if (showScope) ...[
+            const SizedBox(width: 8),
+            _ScopeChip(
+              wordColor: wordColor,
+              orpColor: orpColor,
+              filled: isActive,
+              label: _scopeLabel(l10n, category.scope),
+              tooltip: _scopeTooltip(l10n, category.scope),
+            ),
+          ],
         ],
       ),
     );

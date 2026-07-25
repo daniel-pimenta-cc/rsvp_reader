@@ -15,10 +15,15 @@ class ReaderViewSection extends ConsumerWidget {
   final DisplaySettings settings;
   final bool isActive;
 
+  /// Compact keeps the font size (the one thing you nudge while reading)
+  /// and drops the highlight colour.
+  final bool compact;
+
   const ReaderViewSection({
     required this.bookId,
     required this.settings,
     this.isActive = false,
+    this.compact = false,
     super.key,
   });
 
@@ -35,6 +40,7 @@ class ReaderViewSection extends ConsumerWidget {
           wordColor: settings.wordColor,
           orpColor: settings.orpColor,
           isActive: isActive,
+          showScope: !compact,
         ),
 
         SettingRow(
@@ -59,15 +65,16 @@ class ReaderViewSection extends ConsumerWidget {
                         AppConstants.maxContextFontSize))),
           ),
         ),
-        const SizedBox(height: 12),
-
-        ColorRow(
-          label: l10n.settingsHighlightColor,
-          labelColor: settings.wordColor,
-          color: settings.highlightColor,
-          onChanged: (c) => updateDisplaySetting(ref, bookId,
-              (s) => s.copyWith(highlightColorValue: c.toARGB32())),
-        ),
+        if (!compact) ...[
+          const SizedBox(height: 12),
+          ColorRow(
+            label: l10n.settingsHighlightColor,
+            labelColor: settings.wordColor,
+            color: settings.highlightColor,
+            onChanged: (c) => updateDisplaySetting(ref, bookId,
+                (s) => s.copyWith(highlightColorValue: c.toARGB32())),
+          ),
+        ],
       ],
     );
   }

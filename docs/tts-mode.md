@@ -177,7 +177,7 @@ reasonable sync.
 
 | Surface | Widget | Notes |
 |---|---|---|
-| Top-bar mode toggle | `ReaderModeMenu` | `PopupMenuButton` with radio-list of three options (RSVP / E-reader / TTS). `ReaderMode.scroll` collapses under "RSVP" since it's just the paused state of the RSVP reading experience. |
+| Mode switcher | `ReaderModeFab` | Floating pill in the bottom-left of the reading area that expands into three labelled options (RSVP / E-reader / TTS). Hidden during playback and while scrolling down. `ReaderMode.scroll` collapses under "RSVP" since it's just the paused state of the RSVP reading experience. |
 | Mode area in TTS | `ContextScrollView(showHighlight: true)` | Same surface used by `ReaderMode.scroll`; the engine's progress callback drives the highlight. |
 | Transport row | `RsvpControls` | `ControlsTransportRow` takes a `speedControl` widget; the parent feeds the `WpmCapsule` a WPM or TTS-rate label based on `state.mode`. |
 | Settings sheet | `DisplaySettingsPanel._buildTtsSection` | Voice picker (opens `TtsVoicePickerSheet`) and pitch slider. (The rate lives in the transport row, not here — same as the WPM selector.) |

@@ -22,6 +22,7 @@ import '../../domain/entities/display_settings.dart';
 import '../../domain/entities/rsvp_state.dart';
 import '../providers/rsvp_engine_provider.dart';
 import '../screens/fullscreen_image_screen.dart';
+import 'reader_floating_pill.dart';
 import 'rsvp_paragraph_view.dart';
 
 /// A scroll item is one of: a chapter header, a paragraph of words, or an
@@ -765,21 +766,11 @@ class _LockOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final pillBg = backgroundColor.withAlpha(220);
-    final borderColor = wordColor.withAlpha(38);
 
-    Widget pill(Widget child) => Container(
-          decoration: BoxDecoration(
-            color: pillBg,
-            shape: BoxShape.circle,
-            border: Border.all(color: borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(28),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    Widget pill(Widget child) => DecoratedBox(
+          decoration: readerPillDecoration(
+            backgroundColor: backgroundColor,
+            wordColor: wordColor,
           ),
           child: child,
         );

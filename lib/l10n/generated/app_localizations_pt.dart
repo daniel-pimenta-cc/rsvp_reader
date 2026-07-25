@@ -243,7 +243,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get tapToResume => 'Toque para retomar';
 
   @override
-  String get readerModeMenuTooltip => 'Modo de leitura';
+  String get readerModeTooltip => 'Modo de leitura';
 
   @override
   String get readerModeRsvp => 'RSVP';
@@ -253,6 +253,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get readerModeTts => 'Narração';
+
+  @override
+  String get chaptersTitle => 'Capítulos';
+
+  @override
+  String get settingsAllSettings => 'Todas as configurações';
 
   @override
   String get lockHighlight => 'Travar palavra de foco';

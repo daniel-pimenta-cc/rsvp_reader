@@ -15,10 +15,15 @@ class ChromeSection extends ConsumerWidget {
   final DisplaySettings settings;
   final bool isActive;
 
+  /// Never rendered in the compact panel (see [quickCategoriesFor]); the
+  /// flag exists so every section takes the same arguments.
+  final bool compact;
+
   const ChromeSection({
     required this.bookId,
     required this.settings,
     this.isActive = false,
+    this.compact = false,
     super.key,
   });
 
@@ -35,6 +40,7 @@ class ChromeSection extends ConsumerWidget {
           wordColor: settings.wordColor,
           orpColor: settings.orpColor,
           isActive: isActive,
+          showScope: !compact,
         ),
 
         SwitchRow(

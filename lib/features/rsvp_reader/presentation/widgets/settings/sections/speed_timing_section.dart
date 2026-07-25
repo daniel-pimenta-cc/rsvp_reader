@@ -11,15 +11,20 @@ import '../settings_section_header.dart';
 /// "Speed & Timing" section — RSVP scope. Default WPM, smart-timing
 /// toggle, ramp-up toggle, and the structural sentence / chapter pause
 /// multipliers.
+///
+/// In [compact] mode only the speed itself survives: the timing knobs are
+/// tuned once and then forgotten.
 class SpeedTimingSection extends ConsumerWidget {
   final String? bookId;
   final DisplaySettings settings;
   final bool isActive;
+  final bool compact;
 
   const SpeedTimingSection({
     required this.bookId,
     required this.settings,
     this.isActive = false,
+    this.compact = false,
     super.key,
   });
 
@@ -36,6 +41,7 @@ class SpeedTimingSection extends ConsumerWidget {
           wordColor: settings.wordColor,
           orpColor: settings.orpColor,
           isActive: isActive,
+          showScope: !compact,
         ),
 
         SettingRow(
@@ -49,56 +55,58 @@ class SpeedTimingSection extends ConsumerWidget {
                 ref, bookId, (s) => s.copyWith(wpm: v)),
           ),
         ),
-        const SizedBox(height: 12),
+        if (!compact) ...[
+          const SizedBox(height: 12),
 
-        SwitchRow(
-          label: l10n.settingsSmartTiming,
-          subtitle: l10n.settingsSmartTimingDesc,
-          labelColor: settings.wordColor,
-          value: settings.smartTiming,
-          onChanged: (v) => updateDisplaySetting(
-              ref, bookId, (s) => s.copyWith(smartTiming: v)),
-        ),
-        const SizedBox(height: 8),
+          SwitchRow(
+            label: l10n.settingsSmartTiming,
+            subtitle: l10n.settingsSmartTimingDesc,
+            labelColor: settings.wordColor,
+            value: settings.smartTiming,
+            onChanged: (v) => updateDisplaySetting(
+                ref, bookId, (s) => s.copyWith(smartTiming: v)),
+          ),
+          const SizedBox(height: 8),
 
-        SwitchRow(
-          label: l10n.settingsRampUp,
-          subtitle: l10n.settingsRampUpDesc,
-          labelColor: settings.wordColor,
-          value: settings.rampUp,
-          onChanged: (v) => updateDisplaySetting(
-              ref, bookId, (s) => s.copyWith(rampUp: v)),
-        ),
-        const SizedBox(height: 12),
+          SwitchRow(
+            label: l10n.settingsRampUp,
+            subtitle: l10n.settingsRampUpDesc,
+            labelColor: settings.wordColor,
+            value: settings.rampUp,
+            onChanged: (v) => updateDisplaySetting(
+                ref, bookId, (s) => s.copyWith(rampUp: v)),
+          ),
+          const SizedBox(height: 12),
 
-        MultiplierSliderRow(
-          label: l10n.settingsSentencePause,
-          subtitle: l10n.settingsSentencePauseDesc,
-          labelColor: settings.wordColor,
-          orpColor: settings.orpColor,
-          value: settings.sentencePauseMultiplier,
-          min: 1.0,
-          max: 4.0,
-          divisions: 12,
-          labelFor: (v) => l10n.multiplierValue(formatMultiplier(v)),
-          onChanged: (v) => updateDisplaySetting(
-              ref, bookId, (s) => s.copyWith(sentencePauseMultiplier: v)),
-        ),
-        const SizedBox(height: 4),
+          MultiplierSliderRow(
+            label: l10n.settingsSentencePause,
+            subtitle: l10n.settingsSentencePauseDesc,
+            labelColor: settings.wordColor,
+            orpColor: settings.orpColor,
+            value: settings.sentencePauseMultiplier,
+            min: 1.0,
+            max: 4.0,
+            divisions: 12,
+            labelFor: (v) => l10n.multiplierValue(formatMultiplier(v)),
+            onChanged: (v) => updateDisplaySetting(
+                ref, bookId, (s) => s.copyWith(sentencePauseMultiplier: v)),
+          ),
+          const SizedBox(height: 4),
 
-        MultiplierSliderRow(
-          label: l10n.settingsChapterPause,
-          subtitle: l10n.settingsChapterPauseDesc,
-          labelColor: settings.wordColor,
-          orpColor: settings.orpColor,
-          value: settings.chapterPauseMultiplier,
-          min: 1.0,
-          max: 4.0,
-          divisions: 12,
-          labelFor: (v) => l10n.multiplierValue(formatMultiplier(v)),
-          onChanged: (v) => updateDisplaySetting(
-              ref, bookId, (s) => s.copyWith(chapterPauseMultiplier: v)),
-        ),
+          MultiplierSliderRow(
+            label: l10n.settingsChapterPause,
+            subtitle: l10n.settingsChapterPauseDesc,
+            labelColor: settings.wordColor,
+            orpColor: settings.orpColor,
+            value: settings.chapterPauseMultiplier,
+            min: 1.0,
+            max: 4.0,
+            divisions: 12,
+            labelFor: (v) => l10n.multiplierValue(formatMultiplier(v)),
+            onChanged: (v) => updateDisplaySetting(
+                ref, bookId, (s) => s.copyWith(chapterPauseMultiplier: v)),
+          ),
+        ],
       ],
     );
   }

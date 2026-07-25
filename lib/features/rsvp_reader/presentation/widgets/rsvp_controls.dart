@@ -4,13 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/responsive.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/rsvp_state.dart';
-import '../providers/reader_side_panel_provider.dart';
 import '../providers/rsvp_engine_provider.dart';
 import 'chapter_list_sheet.dart';
-import 'controls_meta_row.dart';
 import 'controls_progress_row.dart';
 import 'controls_shell.dart';
 import 'controls_transport_row.dart';
@@ -108,7 +105,6 @@ class _RsvpControlsState extends ConsumerState<RsvpControls> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ControlsMetaRow(state: state, l10n: l10n),
             if (settings.showProgressSlider) ...[
               const SizedBox(height: AppSpacing.xs),
               SeekSlider(
@@ -119,7 +115,8 @@ class _RsvpControlsState extends ConsumerState<RsvpControls> {
             ControlsProgressRow(
               state: state,
               l10n: l10n,
-              onOpenChapters: () => _openChapters(context),
+              onOpenChapters: () =>
+                  openChapterList(context, ref, widget.bookId),
             ),
             const SizedBox(height: AppSpacing.md),
             ControlsTransportRow(
@@ -148,22 +145,5 @@ class _RsvpControlsState extends ConsumerState<RsvpControls> {
         ),
       ),
     );
-  }
-
-  void _openChapters(BuildContext context) {
-    if (context.isTablet && context.isLandscape) {
-      final current = ref.read(readerSidePanelProvider);
-      ref.read(readerSidePanelProvider.notifier).state =
-          current == ReaderSidePanelMode.chapters
-              ? ReaderSidePanelMode.none
-              : ReaderSidePanelMode.chapters;
-    } else {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => ChapterListSheet(bookId: widget.bookId),
-      );
-    }
   }
 }

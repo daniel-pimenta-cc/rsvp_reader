@@ -15,10 +15,15 @@ class TypographySection extends ConsumerWidget {
   final DisplaySettings settings;
   final bool isActive;
 
+  /// Both rows survive compact — font and background are the two things
+  /// people actually change mid-book.
+  final bool compact;
+
   const TypographySection({
     required this.bookId,
     required this.settings,
     this.isActive = false,
+    this.compact = false,
     super.key,
   });
 
@@ -35,6 +40,7 @@ class TypographySection extends ConsumerWidget {
           wordColor: settings.wordColor,
           orpColor: settings.orpColor,
           isActive: isActive,
+          showScope: !compact,
         ),
 
         FontSelector(

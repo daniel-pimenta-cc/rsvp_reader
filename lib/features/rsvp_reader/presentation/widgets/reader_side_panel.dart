@@ -5,9 +5,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/display_settings.dart';
 import '../providers/reader_side_panel_provider.dart';
-import '../providers/rsvp_engine_provider.dart';
 import 'bookmarks_list.dart';
-import 'chapter_tile.dart';
+import 'chapter_list_view.dart';
 import 'display_settings_panel.dart';
 import 'finish_book_button.dart';
 
@@ -50,8 +49,8 @@ class ReaderSidePanel extends ConsumerWidget {
                   .read(readerSidePanelProvider.notifier)
                   .state = ReaderSidePanelMode.none,
               title: switch (panel) {
-                ReaderSidePanelMode.settings => 'Settings',
-                ReaderSidePanelMode.chapters => 'Chapters',
+                ReaderSidePanelMode.settings => l10n.settings,
+                ReaderSidePanelMode.chapters => l10n.chaptersTitle,
                 ReaderSidePanelMode.bookmarks => l10n.bookmarksTitle,
                 ReaderSidePanelMode.none => '',
               },
@@ -77,7 +76,9 @@ class ReaderSidePanel extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DisplaySettingsPanel(bookId: bookId),
+                DisplaySettingsPanel(bookId: bookId, compact: true),
+                const SizedBox(height: AppSpacing.md),
+                AllSettingsLink(settings: settings),
                 const SizedBox(height: AppSpacing.lg),
                 FinishBookButton(
                   bookId: bookId,
@@ -91,7 +92,7 @@ class ReaderSidePanel extends ConsumerWidget {
           );
         });
       case ReaderSidePanelMode.chapters:
-        return _ChapterList(bookId: bookId, settings: settings);
+        return ChapterListView(bookId: bookId, settings: settings);
       case ReaderSidePanelMode.bookmarks:
         return BookmarksList(bookId: bookId, settings: settings);
       case ReaderSidePanelMode.none:
@@ -150,27 +151,3 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _ChapterList extends ConsumerWidget {
-  final String bookId;
-  final DisplaySettings settings;
-
-  const _ChapterList({required this.bookId, required this.settings});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(rsvpEngineProvider(bookId));
-    final engine = ref.read(rsvpEngineProvider(bookId).notifier);
-
-    return ListView.builder(
-      itemCount: state.chapters.length,
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      itemBuilder: (context, index) => ChapterTile(
-        index: index,
-        chapter: state.chapters[index],
-        isCurrent: index == state.currentChapterIndex,
-        settings: settings,
-        onTap: () => engine.jumpToChapter(index),
-      ),
-    );
-  }
-}

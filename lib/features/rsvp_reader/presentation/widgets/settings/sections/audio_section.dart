@@ -19,10 +19,15 @@ class AudioSection extends ConsumerWidget {
   final DisplaySettings settings;
   final bool isActive;
 
+  /// Compact drops the engine picker — you pick a TTS engine once per
+  /// device, not per book.
+  final bool compact;
+
   const AudioSection({
     required this.bookId,
     required this.settings,
     this.isActive = false,
+    this.compact = false,
     super.key,
   });
 
@@ -35,7 +40,7 @@ class AudioSection extends ConsumerWidget {
       data: (list) => list,
       orElse: () => const <TtsEngine>[],
     );
-    final showEnginePicker = engines.length >= 2;
+    final showEnginePicker = engines.length >= 2 && !compact;
     // Skip the label lookup entirely when the row is hidden — saves a
     // for-loop on every panel rebuild (which fires on every slider tick).
     final currentEngineLabel = showEnginePicker
@@ -55,6 +60,7 @@ class AudioSection extends ConsumerWidget {
           wordColor: settings.wordColor,
           orpColor: settings.orpColor,
           isActive: isActive,
+          showScope: !compact,
         ),
 
         if (showEnginePicker) ...[
